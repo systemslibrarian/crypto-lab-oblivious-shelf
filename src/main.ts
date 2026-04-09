@@ -34,6 +34,7 @@ function buildHTML(): string {
       <a href="#section-c">C: Communication Cost</a>
       <a href="#section-d">D: Librarian's Dilemma</a>
     </nav>
+    <main id="main-content">
     ${buildSectionA()}
     <hr class="section-divider" />
     ${buildSectionB()}
@@ -41,6 +42,7 @@ function buildHTML(): string {
     ${buildSectionC()}
     <hr class="section-divider" />
     ${buildSectionD()}
+    </main>
     ${buildFooter()}
   `;
 }
@@ -376,7 +378,8 @@ function buildSectionC(): string {
       <div class="subsection">
         <h3>C2 — Number of Servers vs. Communication</h3>
         <div class="pir-table-wrap">
-          <table class="pir-table" aria-label="Communication complexity by number of servers">
+          <table class="pir-table">
+            <caption class="sr-only">Communication complexity by number of servers</caption>
             <thead>
               <tr>
                 <th scope="col">Servers</th>
@@ -497,7 +500,8 @@ function buildSectionD(): string {
       <div class="subsection">
         <h3>D2 — Where IT-PIR Fits</h3>
         <div style="overflow-x:auto">
-          <table class="comparison-table" aria-label="Privacy approach comparison">
+          <table class="comparison-table">
+            <caption class="sr-only">Privacy approach comparison</caption>
             <thead>
               <tr>
                 <th scope="col">Approach</th>
