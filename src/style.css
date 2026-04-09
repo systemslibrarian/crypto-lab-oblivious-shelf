@@ -1,0 +1,864 @@
+/* ============================================================
+   Oblivious Shelf — Design System
+   Library/archive aesthetic: warm neutrals, serif-adjacent fonts
+   ============================================================ */
+
+/* ---------- Font import (system stack) ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ---------- Dark theme (default) ---------- */
+:root,
+[data-theme="dark"] {
+  --bg: #1a1714;
+  --surface: #221f1b;
+  --surface-alt: #2c2823;
+  --text: #e8e0d4;
+  --text-muted: #9c9080;
+  --accent: #c8a96e;
+  --accent-hover: #dbbf85;
+  --border: #3d3730;
+  --code-bg: #0f0e0c;
+  --success: #7ab87a;
+  --warning: #d4a84b;
+  --error: #c96060;
+
+  /* Texture: subtle warm noise via gradient */
+  --texture: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 2px,
+    rgba(200, 169, 110, 0.02) 2px,
+    rgba(200, 169, 110, 0.02) 4px
+  );
+}
+
+/* ---------- Light theme ---------- */
+[data-theme="light"] {
+  --bg: #f5f0e8;
+  --surface: #fffdf8;
+  --surface-alt: #f0ebe0;
+  --text: #2a2318;
+  --text-muted: #7a6e5f;
+  --accent: #8b5e1a;
+  --accent-hover: #a3701f;
+  --border: #d8cfc2;
+  --code-bg: #eae5dc;
+  --success: #3d7a3d;
+  --warning: #9a6a10;
+  --error: #8b2020;
+
+  --texture: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 2px,
+    rgba(139, 94, 26, 0.02) 2px,
+    rgba(139, 94, 26, 0.02) 4px
+  );
+}
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Crimson Pro', 'Palatino Linotype', Georgia, 'Times New Roman', serif;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  background-color: var(--bg);
+  background-image: var(--texture);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ---------- Typography ---------- */
+h1, h2, h3, h4 {
+  line-height: 1.25;
+  color: var(--text);
+}
+
+h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 300; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 400; }
+h3 { font-size: clamp(1.1rem, 2vw, 1.4rem); font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+
+p { margin-bottom: 1em; }
+p:last-child { margin-bottom: 0; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+a:hover {
+  color: var(--accent-hover);
+  border-bottom-color: var(--accent-hover);
+}
+
+code, pre {
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.85em;
+}
+
+code {
+  background: var(--code-bg);
+  color: var(--accent);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+}
+
+/* ---------- Layout ---------- */
+#app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  position: relative;
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3rem;
+}
+
+.site-header .subtitle {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.site-header .breadcrumb {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.site-header .breadcrumb a {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ---------- Theme toggle ---------- */
+.theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-alt);
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+
+/* ---------- Sections ---------- */
+.demo-section {
+  margin-bottom: 4rem;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 3rem 0;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.card:hover {
+  border-color: var(--accent);
+}
+
+/* ---------- PIR Visual — Section A ---------- */
+.pir-visual {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.pir-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  min-height: 100px;
+}
+
+.pir-node {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  background: var(--surface-alt);
+  font-size: 0.9rem;
+  min-width: 90px;
+}
+
+.pir-node.patron {
+  border-color: var(--accent);
+  background: var(--code-bg);
+}
+
+.pir-node.server {
+  border-color: var(--text-muted);
+}
+
+.pir-node.server-a {
+  border-color: var(--success);
+}
+
+.pir-node.server-b {
+  border-color: var(--warning);
+}
+
+.pir-node .node-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.pir-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 100px;
+}
+
+.pir-arrow .arrow-line {
+  width: 60px;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+}
+
+.pir-arrow .arrow-line::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  border: 5px solid transparent;
+  border-left-color: var(--border);
+}
+
+.pir-arrow.danger .arrow-line { background: var(--error); }
+.pir-arrow.danger .arrow-line::after { border-left-color: var(--error); }
+.pir-arrow.danger { color: var(--error); }
+
+.pir-arrow.safe-a .arrow-line { background: var(--success); }
+.pir-arrow.safe-a .arrow-line::after { border-left-color: var(--success); }
+.pir-arrow.safe-a { color: var(--success); }
+
+.pir-arrow.safe-b .arrow-line { background: var(--warning); }
+.pir-arrow.safe-b .arrow-line::after { border-left-color: var(--warning); }
+.pir-arrow.safe-b { color: var(--warning); }
+
+/* ---------- Protocol steps in Section A3 ---------- */
+.protocol-steps {
+  counter-reset: step;
+  list-style: none;
+  margin: 1.5rem 0;
+}
+
+.protocol-step {
+  counter-increment: step;
+  padding: 0.75rem 1rem 0.75rem 3rem;
+  position: relative;
+  border-left: 2px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
+.protocol-step::before {
+  content: counter(step);
+  position: absolute;
+  left: -1px;
+  top: 0.6rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.protocol-step .step-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  color: var(--accent);
+}
+
+/* ---------- explainer boxes ---------- */
+.explainer-box {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.explainer-box.privacy {
+  border-left-color: var(--success);
+}
+
+.explainer-box.warning {
+  border-left-color: var(--warning);
+}
+
+/* ---------- Section B — Demo layout ---------- */
+.demo-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .demo-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Catalog grid ---------- */
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+.catalog-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  position: relative;
+}
+
+.catalog-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-alt);
+}
+
+.catalog-card.selected {
+  border-color: var(--accent);
+  background: var(--surface-alt);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.catalog-card .card-index {
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  background: var(--code-bg);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+}
+
+.catalog-card .card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-right: 1.5rem;
+  color: var(--text);
+}
+
+.catalog-card .card-author {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
+.catalog-card .card-callnum {
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.catalog-card .availability-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  margin-top: 0.3rem;
+}
+
+.availability-badge.available {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+}
+
+.availability-badge.checked-out {
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+  color: var(--error);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+}
+
+/* ---------- Query panel ---------- */
+.query-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.query-panel h3 {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.query-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  letter-spacing: 0.02em;
+}
+
+.btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* ---------- Walkthrough steps ---------- */
+.walkthrough {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.walk-step {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: var(--surface-alt);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.walk-step.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.walk-step .step-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+
+.walk-step .step-body {
+  font-size: 0.88rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.walk-step.result .step-body {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-style: italic;
+  word-break: normal;
+}
+
+.walk-step.privacy-note {
+  border-left: 3px solid var(--success);
+}
+
+.walk-step.privacy-note .step-body {
+  font-family: inherit;
+  word-break: normal;
+  font-size: 0.88rem;
+}
+
+/* ---------- Server-view panels ---------- */
+.server-views {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 560px) {
+  .server-views {
+    grid-template-columns: 1fr;
+  }
+}
+
+.server-view-box {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  background: var(--code-bg);
+  font-size: 0.82rem;
+}
+
+.server-view-box.server-a {
+  border-top: 3px solid var(--success);
+}
+
+.server-view-box.server-b {
+  border-top: 3px solid var(--warning);
+}
+
+.server-view-box .sv-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.server-view-box.server-a .sv-label { color: var(--success); }
+.server-view-box.server-b .sv-label { color: var(--warning); }
+
+.server-view-box .sv-set {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+  word-break: break-all;
+}
+
+.server-view-box .sv-note {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.78rem;
+}
+
+/* ---------- Section C — Table ---------- */
+.pir-table-wrap {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+.pir-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.pir-table th {
+  text-align: left;
+  padding: 0.6rem 1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.pir-table td {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  vertical-align: top;
+}
+
+.pir-table tr:nth-child(even) td {
+  background: var(--surface-alt);
+}
+
+.pir-table .impossible {
+  color: var(--error);
+  font-style: italic;
+}
+
+.pir-table .highlight td {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+/* ---------- Section D — comparison table ---------- */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin: 1.25rem 0;
+}
+
+.comparison-table th {
+  text-align: left;
+  padding: 0.6rem 1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.comparison-table td {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  vertical-align: top;
+}
+
+.comparison-table tr:nth-child(even) td {
+  background: var(--surface-alt);
+}
+
+/* ---------- Limitations list ---------- */
+.limitations-list {
+  list-style: none;
+  margin: 1rem 0;
+}
+
+.limitations-list li {
+  padding: 0.6rem 1rem 0.6rem 2.2rem;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.limitations-list li:last-child {
+  border-bottom: none;
+}
+
+.limitations-list li::before {
+  content: '⚠';
+  position: absolute;
+  left: 0.5rem;
+  top: 0.6rem;
+  color: var(--warning);
+  font-size: 0.85rem;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 0;
+  margin-top: 4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.site-footer .scripture {
+  font-style: italic;
+  margin-bottom: 0.75rem;
+}
+
+.site-footer .back-link {
+  font-size: 0.8rem;
+}
+
+/* ---------- Subsection spacing ---------- */
+.subsection {
+  margin-bottom: 2.5rem;
+}
+
+.subsection h3 {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---------- Inline hint ---------- */
+.hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* ---------- Selected book display ---------- */
+.selected-display {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+}
+
+.selected-display .sel-none {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.selected-display .sel-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+/* ---------- XOR chain display ---------- */
+.xor-chain {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+  line-height: 1.8;
+  word-break: break-word;
+}
+
+/* ---------- Section nav ---------- */
+.section-nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-nav a {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  border-bottom: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.section-nav a:hover {
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+/* ---------- Result badge ---------- */
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.result-badge.available {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+}
+
+.result-badge.checked-out {
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+  color: var(--error);
+  border: 1px solid color-mix(in srgb, var(--error) 35%, transparent);
+}
