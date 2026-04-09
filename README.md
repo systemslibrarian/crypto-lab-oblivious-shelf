@@ -5,7 +5,7 @@
 
 ## 1. What It Is
 
-crypto-lab-oblivious-shelf implements the 2-server Information-Theoretic Private Information Retrieval (IT-PIR) scheme from Chor, Goldreich, Kushilevitz, and Sudan (1995). A patron retrieves an entry from a 16-item library catalog by sending XOR-based queries to two non-colluding servers, neither of which learns which entry was requested. The security model is information-theoretic: the server provably learns nothing regardless of its computational power, requiring no cryptographic hardness assumptions. This demo connects library patron privacy ethics directly to a concrete mathematical primitive.
+crypto-lab-oblivious-shelf implements the 2-server Information-Theoretic Private Information Retrieval (IT-PIR) scheme from Chor, Goldreich, Kushilevitz, and Sudan (1995). A patron retrieves an entry from a 16-item library catalog by sending XOR-based queries to two non-colluding servers, neither of which learns which entry was requested. The protocol solves the database-query privacy problem: how to fetch a specific record from a remote database without the database operator learning which record was fetched. The security model is information-theoretic — the server provably learns nothing regardless of its computational power, requiring no cryptographic hardness assumptions.
 
 ## 2. When to Use It
 
@@ -19,7 +19,7 @@ crypto-lab-oblivious-shelf implements the 2-server Information-Theoretic Private
 
 [https://systemslibrarian.github.io/crypto-lab-oblivious-shelf/](https://systemslibrarian.github.io/crypto-lab-oblivious-shelf/)
 
-Select any book from the 16-entry catalog, click "Generate Query," and step through the full 2-server XOR PIR protocol with real arithmetic. The privacy audit panel shows exactly what each server sees, demonstrating that neither server's view reveals the target index.
+Select any book from the 16-entry catalog grid to set it as the target index, then click **Generate Query** to run the full 2-server XOR PIR protocol with real arithmetic. Each step — random subset generation, symmetric difference, server-side XOR computation, and client-side recovery — is displayed sequentially in the walkthrough panel. Click **Run Again** to re-run with a fresh random subset S, demonstrating that each query looks different even for the same target. The privacy audit panel below the walkthrough shows exactly what each server sees, confirming that neither server's view reveals the target index.
 
 ## 4. What Can Go Wrong
 
@@ -31,11 +31,11 @@ Select any book from the 16-entry catalog, click "Generate Query," and step thro
 
 ## 5. Real-World Usage
 
-- **RAID-PIR (2014):** a practical IT-PIR system using RAID-style XOR distribution, designed for databases of millions of records.
-- **Percy++ (Ian Goldberg, University of Waterloo):** an open-source IT-PIR and CPIR library used in academic and privacy research deployments.
-- **ALA privacy guidelines:** the American Library Association has cited cryptographic privacy techniques including PIR as technical complements to legal patron privacy protections.
-- **Tor hidden services:** while not PIR, Tor's onion routing addresses the same adversarial model (server learns nothing about requester) at the network layer.
-- **Microsoft SEAL:** a computational PIR adjacent system using homomorphic encryption for single-server keyword search without IT-PIR's communication cost.
+- **RAID-PIR (Devet and Goldberg, 2014):** A practical IT-PIR system that distributes a large database across multiple servers using RAID-style XOR parity, enabling private queries over databases with millions of records at usable throughput.
+- **Percy++ (Ian Goldberg, University of Waterloo):** An open-source C++ library implementing both IT-PIR and CPIR protocols, used in academic privacy research and as a reference implementation for multi-server PIR schemes.
+- **PIR-Tor (Mittal et al., 2011):** A proposal to use IT-PIR for private Tor relay selection, allowing clients to fetch relay descriptors from directory servers without revealing which relays they intend to use.
+- **Popcorn (Gupta et al., 2016):** A media-streaming system using IT-PIR to let users retrieve video content from a library without the server learning which video was watched, targeting the Netflix-style content selection problem.
+- **Checklist (Henry and Goldberg, 2013):** A privacy-preserving messaging system built on IT-PIR, allowing users to retrieve messages from a bulletin board without revealing which messages they are reading.
 
 **Cross-links:**
 - [Patron Shield](https://systemslibrarian.github.io/crypto-lab-patron-shield/) — IT-PIR applied to full catalog privacy
