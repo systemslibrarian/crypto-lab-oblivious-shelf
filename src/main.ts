@@ -85,7 +85,7 @@ function buildSectionA(): string {
           <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;text-align:center;">
             Single-server setup — the server learns which book you want
           </p>
-          <div class="pir-diagram">
+          <div class="pir-diagram pir-diagram--single">
             <div class="pir-node patron">
               <div class="node-label">Patron</div>
               wants book #9
@@ -275,7 +275,8 @@ function buildSectionB(): string {
     const safeAuthor = escapeHtml(entry.author);
     const safeCall = escapeHtml(entry.callNumber);
     return `
-      <div class="catalog-card" data-index="${entry.id}" role="button" tabindex="0"
+      <div class="catalog-card" data-index="${entry.id}" role="option" tabindex="0"
+           aria-selected="false"
            aria-label="Book ${entry.id}: ${safeTitle} by ${safeAuthor}. ${badgeText}.">
         <span class="card-index">#${entry.id}</span>
         <div class="card-title">${safeTitle}</div>

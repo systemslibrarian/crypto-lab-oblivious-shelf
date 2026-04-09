@@ -572,6 +572,13 @@ pre code {
   transform: none;
 }
 
+.btn:disabled:hover {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+  transform: none;
+}
+
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
