@@ -950,13 +950,8 @@ pre code {
     gap: 0.75rem;
   }
 
-  .pir-arrow,
-  .pir-arrow .arrow-line {
-    transform: rotate(90deg) !important;
-  }
-
-  .pir-arrow span {
-    transform: rotate(-90deg) !important;
+  .pir-diagram:not(.pir-diagram--single) .pir-arrow .arrow-line {
+    transform: rotate(90deg);
   }
 
   .query-panel {

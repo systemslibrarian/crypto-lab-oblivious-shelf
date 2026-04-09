@@ -13,6 +13,7 @@ const DB: boolean[] = generateDatabase(DB_SIZE);
 // ---------- State ----------
 let selectedIndex: number | null = null;
 let isRunning = false;
+let pendingTimeouts: number[] = [];
 
 // ---------- Build HTML ----------
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = buildHTML();
@@ -270,13 +271,16 @@ function buildSectionB(): string {
     const avail = DB[entry.id];
     const badgeClass = avail ? 'checked-out' : 'available';
     const badgeText = avail ? 'Checked out' : 'Available';
+    const safeTitle = escapeHtml(entry.title);
+    const safeAuthor = escapeHtml(entry.author);
+    const safeCall = escapeHtml(entry.callNumber);
     return `
       <div class="catalog-card" data-index="${entry.id}" role="button" tabindex="0"
-           aria-label="Book ${entry.id}: ${entry.title} by ${entry.author}. ${badgeText}.">
+           aria-label="Book ${entry.id}: ${safeTitle} by ${safeAuthor}. ${badgeText}.">
         <span class="card-index">#${entry.id}</span>
-        <div class="card-title">${entry.title}</div>
-        <div class="card-author">${entry.author}</div>
-        <div class="card-callnum">${entry.callNumber}</div>
+        <div class="card-title">${safeTitle}</div>
+        <div class="card-author">${safeAuthor}</div>
+        <div class="card-callnum">${safeCall}</div>
         <span class="availability-badge ${badgeClass}">${badgeText}</span>
       </div>
     `;
@@ -639,9 +643,9 @@ function initCatalogCards(): void {
     if (display) {
       display.innerHTML = `
         <div class="sel-info">
-          <strong>#${index}</strong> — ${entry.title}
-          <span style="color:var(--text-muted)"> by ${entry.author}</span>
-          <code style="margin-left:0.5rem;font-size:0.75rem">${entry.callNumber}</code>
+          <strong>#${index}</strong> — ${escapeHtml(entry.title)}
+          <span style="color:var(--text-muted)"> by ${escapeHtml(entry.author)}</span>
+          <code style="margin-left:0.5rem;font-size:0.75rem">${escapeHtml(entry.callNumber)}</code>
         </div>
       `;
     }
@@ -693,6 +697,9 @@ function initQueryPanel(): void {
 }
 
 function clearWalkthrough(): void {
+  // Cancel any pending step animations from a previous run
+  pendingTimeouts.forEach((id) => clearTimeout(id));
+  pendingTimeouts = [];
   const wt = document.getElementById('walkthrough');
   if (wt) wt.innerHTML = '';
   const sv = document.getElementById('server-views');
@@ -749,7 +756,7 @@ function runQuery(targetIndex: number): void {
   const walkthrough = document.getElementById('walkthrough')!;
 
   steps.forEach((step, i) => {
-    setTimeout(() => {
+    const tid = window.setTimeout(() => {
       const div = document.createElement('div');
       div.className = `walk-step${step.className ? ' ' + step.className : ''}`;
       div.innerHTML = `
@@ -770,6 +777,7 @@ function runQuery(targetIndex: number): void {
         isRunning = false;
       }
     }, i * 380);
+    pendingTimeouts.push(tid);
   });
 }
 
