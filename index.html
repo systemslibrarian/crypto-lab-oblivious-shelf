@@ -2,13 +2,19 @@
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Interactive demo of 2-server Information-Theoretic Private Information Retrieval (IT-PIR) from Chor, Goldreich, Kushilevitz &amp; Sudan (1995). A patron retrieves a library catalog entry without the server learning which book was requested." />
+    <meta name="color-scheme" content="dark light" />
     <title>Oblivious Shelf — IT-PIR Library Demo</title>
     <script>
       (function () {
-        const saved = localStorage.getItem('theme');
-        document.documentElement.setAttribute('data-theme', saved ?? 'dark');
+        var saved = localStorage.getItem('theme');
+        var theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        var meta = document.createElement('meta');
+        meta.setAttribute('name', 'theme-color');
+        meta.setAttribute('content', theme === 'light' ? '#f5f0e8' : '#1a1714');
+        document.head.appendChild(meta);
       })();
     </script>
     <link rel="stylesheet" href="/src/style.css" />

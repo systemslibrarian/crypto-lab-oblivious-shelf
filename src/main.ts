@@ -4,7 +4,7 @@ import {
   pirQuery,
   generateDatabase,
   formatSet,
-  buildXorChain,
+  xorResponse,
 } from './pir.ts';
 
 // ---------- Database: generated once per session ----------
@@ -81,11 +81,12 @@ function buildSectionA(): string {
           exactly which book was requested, creating a permanent log entry.
         </p>
 
-        <div class="pir-visual" aria-label="Single-server diagram showing privacy leak">
+        <div class="pir-visual">
           <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;text-align:center;">
             Single-server setup — the server learns which book you want
           </p>
-          <div class="pir-diagram pir-diagram--single">
+          <div class="pir-diagram pir-diagram--single" role="img"
+               aria-label="The patron asks a single library server for book number 9. The server returns the book, but now knows the patron wanted book number 9 — a privacy leak.">
             <div class="pir-node patron">
               <div class="node-label">Patron</div>
               wants book #9
@@ -117,11 +118,12 @@ function buildSectionA(): string {
           requested — even with unlimited computational power.
         </p>
 
-        <div class="pir-visual" aria-label="Two-server PIR diagram showing privacy preservation">
+        <div class="pir-visual">
           <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;text-align:center;">
             IT-PIR setup — two non-colluding servers, neither learns the target
           </p>
-          <div class="pir-diagram">
+          <div class="pir-diagram" role="img"
+               aria-label="The patron sends set S to Server A and the set S symmetric-difference {9} to Server B. Each server sees only a random-looking set, so neither one learns that book number 9 was requested.">
             <div class="pir-node patron">
               <div class="node-label">Patron</div>
               wants book #9
@@ -275,10 +277,11 @@ function buildSectionB(): string {
     const safeAuthor = escapeHtml(entry.author);
     const safeCall = escapeHtml(entry.callNumber);
     return `
-      <div class="catalog-card" data-index="${entry.id}" role="option" tabindex="0"
+      <div class="catalog-card" id="card-${entry.id}" data-index="${entry.id}" role="option"
+           tabindex="${entry.id === 0 ? '0' : '-1'}"
            aria-selected="false"
            aria-label="Book ${entry.id}: ${safeTitle} by ${safeAuthor}. ${badgeText}.">
-        <span class="card-index">#${entry.id}</span>
+        <span class="card-index" aria-hidden="true">#${entry.id}</span>
         <div class="card-title">${safeTitle}</div>
         <div class="card-author">${safeAuthor}</div>
         <div class="card-callnum">${safeCall}</div>
@@ -301,10 +304,14 @@ function buildSectionB(): string {
       <div class="demo-layout">
         <!-- Left: catalog -->
         <div>
-          <h3 style="margin-bottom:0.75rem;font-size:0.9rem">
-            16-Book Catalog — click to select target
+          <h3 id="catalog-label" style="margin-bottom:0.35rem;font-size:0.9rem">
+            16-Book Catalog — choose a target
           </h3>
-          <div class="catalog-grid" id="catalog-grid" role="listbox" aria-label="Book catalog">
+          <p class="hint" id="catalog-hint" style="margin-top:0">
+            Click a book, or use arrow keys to move and <kbd>Enter</kbd> to select.
+          </p>
+          <div class="catalog-grid" id="catalog-grid" role="listbox"
+               aria-labelledby="catalog-label" aria-describedby="catalog-hint">
             ${catalogCards}
           </div>
         </div>
@@ -322,9 +329,11 @@ function buildSectionB(): string {
             <button class="btn" id="btn-again" disabled>Run Again</button>
           </div>
 
-          <div class="walkthrough" id="walkthrough" aria-live="polite" aria-label="Step-by-step protocol walkthrough">
+          <div class="walkthrough" id="walkthrough" aria-label="Step-by-step protocol walkthrough" aria-busy="false">
             <!-- Steps injected by JS -->
           </div>
+
+          <div id="sr-status" class="sr-only" role="status" aria-live="polite"></div>
 
           <div class="server-views" id="server-views" style="display:none">
             <div class="server-view-box server-a">
@@ -598,6 +607,8 @@ function initThemeToggle(): void {
   function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#f5f0e8' : '#1a1714');
     if (theme === 'dark') {
       btn.textContent = '🌙';
       btn.setAttribute('aria-label', 'Switch to light mode');
@@ -624,19 +635,33 @@ function initCatalogCards(): void {
   const grid = document.getElementById('catalog-grid');
   if (!grid) return;
 
+  const cards = Array.from(grid.querySelectorAll<HTMLElement>('.catalog-card'));
+  if (cards.length === 0) return;
+
+  // Roving-tabindex position (keyboard focus, distinct from the chosen target).
+  let activeIdx = 0;
+
+  function setRoving(i: number): void {
+    activeIdx = Math.max(0, Math.min(cards.length - 1, i));
+    cards.forEach((c, n) => {
+      c.tabIndex = n === activeIdx ? 0 : -1;
+    });
+  }
+
+  function moveTo(i: number): void {
+    setRoving(i);
+    cards[activeIdx].focus();
+  }
+
   function selectCard(index: number): void {
     selectedIndex = index;
 
-    // Update card highlights
-    grid!.querySelectorAll('.catalog-card').forEach((card) => {
-      card.classList.remove('selected');
-      card.setAttribute('aria-selected', 'false');
+    // Update card highlights / selection state
+    cards.forEach((card) => {
+      const isSel = card.dataset.index === String(index);
+      card.classList.toggle('selected', isSel);
+      card.setAttribute('aria-selected', isSel ? 'true' : 'false');
     });
-    const target = grid!.querySelector<HTMLElement>(`.catalog-card[data-index="${index}"]`);
-    if (target) {
-      target.classList.add('selected');
-      target.setAttribute('aria-selected', 'true');
-    }
 
     // Update selected display
     const entry = CATALOG[index];
@@ -663,21 +688,51 @@ function initCatalogCards(): void {
 
   grid.addEventListener('click', (e) => {
     const card = (e.target as HTMLElement).closest<HTMLElement>('.catalog-card');
-    if (card) {
-      const idx = parseInt(card.dataset.index ?? '-1', 10);
-      if (idx >= 0) selectCard(idx);
-    }
+    if (!card) return;
+    setRoving(cards.indexOf(card));
+    const idx = parseInt(card.dataset.index ?? '-1', 10);
+    if (idx >= 0) selectCard(idx);
   });
 
   grid.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const card = (e.target as HTMLElement).closest<HTMLElement>('.catalog-card');
-      if (card) {
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.catalog-card');
+    if (!card) return;
+    const cur = cards.indexOf(card);
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        moveTo(cur + 1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        moveTo(cur - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        moveTo(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        moveTo(cards.length - 1);
+        break;
+      case 'Enter':
+      case ' ': {
         e.preventDefault();
         const idx = parseInt(card.dataset.index ?? '-1', 10);
         if (idx >= 0) selectCard(idx);
+        break;
       }
     }
+  });
+
+  // Keep the roving tabindex in sync if focus reaches a card another way.
+  grid.addEventListener('focusin', (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.catalog-card');
+    if (!card) return;
+    const idx = cards.indexOf(card);
+    if (idx >= 0 && idx !== activeIdx) setRoving(idx);
   });
 }
 
@@ -707,6 +762,15 @@ function clearWalkthrough(): void {
   if (sv) sv.style.display = 'none';
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function announce(message: string): void {
+  const status = document.getElementById('sr-status');
+  if (status) status.textContent = message;
+}
+
 function runQuery(targetIndex: number): void {
   isRunning = true;
   clearWalkthrough();
@@ -714,91 +778,147 @@ function runQuery(targetIndex: number): void {
   const result = pirQuery(DB, targetIndex);
   const entry = CATALOG[targetIndex];
 
+  // Step bodies are pre-built trusted HTML; dynamic text is escaped inside each builder.
   const steps: Array<{ title: string; body: string; className?: string }> = [
     {
       title: 'Step 1 — Target selected',
-      body: `You want book #${targetIndex} — "${entry.title}" by ${entry.author}`,
+      body: `You want book #${targetIndex} — “${escapeHtml(entry.title)}” by ${escapeHtml(entry.author)}`,
       className: 'result',
     },
     {
       title: 'Step 2 — Random subset S generated',
-      body: `S = ${formatSet(result.subsetS)}  (|S| = ${result.subsetS.size})`,
+      body: `S = ${renderSet(result.subsetS)} <span class="muted">(|S| = ${result.subsetS.size})</span>`,
     },
     {
       title: 'Step 3 — Query to Server A',
-      body: `Sending set S = ${formatSet(result.subsetS)}`,
+      body: `Send set <span class="tag tag-a">S</span> = ${renderSet(result.subsetS)}`,
     },
     {
       title: 'Step 4 — Query to Server B',
-      body: `Sending set S △ {${targetIndex}} = ${formatSet(result.subsetS2)}`,
+      body:
+        `Send <span class="tag tag-b">S △ {${targetIndex}}</span> = ${renderSet(result.subsetS2, targetIndex)}` +
+        `<span class="muted"> — element ${targetIndex} toggled</span>`,
     },
     {
       title: 'Step 5 — Server A computes',
-      body: buildXorChain(DB, result.subsetS),
+      body: renderXorChain(DB, result.subsetS, targetIndex),
       className: 'xor-chain',
     },
     {
       title: 'Step 6 — Server B computes',
-      body: buildXorChain(DB, result.subsetS2),
+      body: renderXorChain(DB, result.subsetS2, targetIndex),
       className: 'xor-chain',
     },
     {
-      title: 'Step 7 — Patron recovers db[' + targetIndex + ']',
-      body: buildRecoveryLine(result, targetIndex),
+      title: `Step 7 — Patron recovers db[${targetIndex}]`,
+      body: renderRecovery(result, targetIndex),
       className: 'result',
     },
     {
       title: 'Step 8 — Privacy proof',
-      body: buildPrivacyProof(result, targetIndex),
+      body: renderPrivacyProof(result, targetIndex),
       className: 'privacy-note',
     },
   ];
 
   const walkthrough = document.getElementById('walkthrough')!;
+  walkthrough.setAttribute('aria-busy', 'true');
+  announce(`Running PIR query for book ${targetIndex}, ${entry.title}.`);
+
+  function makeStep(step: { title: string; body: string; className?: string }): HTMLDivElement {
+    const div = document.createElement('div');
+    div.className = `walk-step${step.className ? ' ' + step.className : ''}`;
+    div.innerHTML = `
+      <div class="step-title">${escapeHtml(step.title)}</div>
+      <div class="step-body">${step.body}</div>
+    `;
+    return div;
+  }
+
+  function finish(): void {
+    walkthrough.setAttribute('aria-busy', 'false');
+    updateServerViews(result);
+    isRunning = false;
+    const label = result.recovered ? 'checked out' : 'available';
+    announce(
+      `Recovered db[${targetIndex}] = ${result.recovered ? 1 : 0}: ${entry.title} is ${label}. ` +
+        `Each server saw only a random-looking set; neither learned the target.`
+    );
+  }
+
+  // Reduced motion: render everything at once, no staggered animation.
+  if (prefersReducedMotion()) {
+    steps.forEach((step) => {
+      const div = makeStep(step);
+      div.classList.add('visible');
+      walkthrough.appendChild(div);
+    });
+    finish();
+    return;
+  }
 
   steps.forEach((step, i) => {
     const tid = window.setTimeout(() => {
-      const div = document.createElement('div');
-      div.className = `walk-step${step.className ? ' ' + step.className : ''}`;
-      div.innerHTML = `
-        <div class="step-title">${escapeHtml(step.title)}</div>
-        <div class="step-body">${escapeHtml(step.body)}</div>
-      `;
+      const div = makeStep(step);
       walkthrough.appendChild(div);
-      // Trigger animation
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          div.classList.add('visible');
-        });
+        requestAnimationFrame(() => div.classList.add('visible'));
       });
-
-      // Last step: show server views
-      if (i === steps.length - 1) {
-        updateServerViews(result);
-        isRunning = false;
-      }
+      if (i === steps.length - 1) finish();
     }, i * 380);
     pendingTimeouts.push(tid);
   });
 }
 
-function buildRecoveryLine(result: ReturnType<typeof pirQuery>, idx: number): string {
+/** Render a set as highlighted HTML, optionally emphasizing the target element. */
+function renderSet(s: Set<number>, target?: number): string {
+  const sorted = [...s].sort((a, b) => a - b);
+  if (sorted.length === 0) return '<span class="set">{ ∅ }</span>';
+  const els = sorted
+    .map((j) => {
+      const isTarget = target !== undefined && j === target;
+      return `<span class="set-el${isTarget ? ' set-el--target' : ''}">${j}</span>`;
+    })
+    .join('<span class="set-sep">, </span>');
+  return `<span class="set">{ ${els} }</span>`;
+}
+
+/** Render the XOR chain as HTML, highlighting the db[target] term. */
+function renderXorChain(db: boolean[], subset: Set<number>, target: number): string {
+  const sorted = [...subset].sort((a, b) => a - b);
+  if (sorted.length === 0) return '<span class="muted">(empty set)</span> = <strong>0</strong>';
+  const terms = sorted
+    .map((j) => {
+      const cls = j === target ? ' xor-term--target' : '';
+      return `<span class="xor-term${cls}">db[${j}]<span class="bit">(${db[j] ? '1' : '0'})</span></span>`;
+    })
+    .join('<span class="xor-op"> ⊕ </span>');
+  const out = xorResponse(db, subset) ? '1' : '0';
+  return `${terms} = <strong>${out}</strong>`;
+}
+
+function renderRecovery(result: ReturnType<typeof pirQuery>, idx: number): string {
   const ra = result.responseA ? '1' : '0';
   const rb = result.responseB ? '1' : '0';
   const rec = result.recovered ? '1' : '0';
   const label = result.recovered ? 'Checked out' : 'Available';
-  return `responseA(${ra}) ⊕ responseB(${rb}) = db[${idx}] = ${rec} → ${label}`;
+  const badgeClass = result.recovered ? 'checked-out' : 'available';
+  return (
+    `<span class="recovery-eq">r<sub>A</sub>(${ra}) <span class="xor-op">⊕</span> ` +
+    `r<sub>B</sub>(${rb}) = db[${idx}] = <strong>${rec}</strong></span>` +
+    `<span class="result-badge ${badgeClass}">${label}</span>`
+  );
 }
 
-function buildPrivacyProof(result: ReturnType<typeof pirQuery>, idx: number): string {
+function renderPrivacyProof(result: ReturnType<typeof pirQuery>, idx: number): string {
   const sStr = formatSet(result.subsetS);
   const s2Str = formatSet(result.subsetS2);
   return (
-    `Server A saw S = ${sStr}. ` +
-    `Is this set random? Yes — every subset is equally likely regardless of target #${idx}. ` +
-    `Does it reveal that book #${idx} was wanted? No.\n` +
-    `Server B saw S△{${idx}} = ${s2Str}. ` +
-    `Also uniformly random. Also reveals nothing about #${idx}.`
+    `<strong>Server A</strong> saw S = <span class="set">${sStr}</span>. ` +
+    `Uniformly random — every subset is equally likely regardless of target #${idx}, ` +
+    `so it reveals nothing about which book was wanted.<br>` +
+    `<strong>Server B</strong> saw S△{${idx}} = <span class="set">${s2Str}</span>. ` +
+    `Also uniformly random, and also reveals nothing about #${idx}.`
   );
 }
 
