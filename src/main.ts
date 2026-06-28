@@ -593,6 +593,13 @@ function buildFooter(): string {
         <a href="https://systemslibrarian.github.io/crypto-lab-silent-tally/">Silent Tally</a> ·
         <a href="https://systemslibrarian.github.io/crypto-lab-shamir-gate/">Shamir Gate</a>
       </p>
+      <p class="back-link">
+        Related demos:
+        <a href="https://systemslibrarian.github.io/crypto-lab-patron-shield/">crypto-lab-patron-shield</a> ·
+        <a href="https://systemslibrarian.github.io/crypto-lab-oram-vault/">crypto-lab-oram-vault</a> ·
+        <a href="https://systemslibrarian.github.io/crypto-lab-psi-gate/">crypto-lab-psi-gate</a> ·
+        <a href="https://systemslibrarian.github.io/crypto-lab-silent-tally/">crypto-lab-silent-tally</a>
+      </p>
     </footer>
   `;
 }
