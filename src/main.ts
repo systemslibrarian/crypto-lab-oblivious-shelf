@@ -329,7 +329,7 @@ function buildSectionB(): string {
             <button class="btn" id="btn-again" disabled>Run Again</button>
           </div>
 
-          <div class="walkthrough" id="walkthrough" aria-label="Step-by-step protocol walkthrough" aria-busy="false">
+          <div class="walkthrough" id="walkthrough" role="group" aria-label="Step-by-step protocol walkthrough" aria-busy="false">
             <!-- Steps injected by JS -->
           </div>
 
