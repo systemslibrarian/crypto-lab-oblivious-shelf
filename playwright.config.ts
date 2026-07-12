@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4253;
+const PORT = Number(process.env.A11Y_PORT) || 4253;
 const BASE = '/crypto-lab-oblivious-shelf/';
 
 export default defineConfig({

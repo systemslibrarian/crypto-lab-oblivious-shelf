@@ -5,3 +5,9 @@ dist-ssr
 /test-results/
 /playwright-report/
 /.pw-browsers/
+
+# scratch git-diff dumps — never commit
+diff.txt
+local-diff.txt
+main-diff.txt
+*-diff.txt

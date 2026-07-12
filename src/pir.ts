@@ -32,12 +32,16 @@ export interface PIRResult {
  */
 export function randomSubset(n: number): Set<number> {
   const subset = new Set<number>();
-  // For each element, flip an independent fair coin using CSPRNG
-  const bytes = new Uint8Array(n);
+  if (n <= 0) return subset;
+  // Draw ceil(n/8) random bytes and consume them one bit at a time: each
+  // element gets its own independent fair coin from a single CSPRNG draw.
+  // Bit (j & 7) of byte (j >> 3) decides membership of element j. (Spending a
+  // whole byte and reading only bit 0 per element — as an earlier version did —
+  // is equally unbiased but wastes 7 of every 8 random bits.)
+  const bytes = new Uint8Array(Math.ceil(n / 8));
   crypto.getRandomValues(bytes);
   for (let j = 0; j < n; j++) {
-    // byte gives 0-255; use bit 0 for an unbiased coin flip
-    if (bytes[j] & 1) {
+    if ((bytes[j >> 3] >> (j & 7)) & 1) {
       subset.add(j);
     }
   }
