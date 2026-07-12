@@ -53,14 +53,23 @@ function buildHTML(): string {
 // ================================================================
 function buildHeader(): string {
   return `
-    <header class="site-header" id="top">
+    <div class="site-header" id="top">
       <button class="theme-toggle" id="theme-toggle" aria-label="Switch to light mode" title="Toggle theme">🌙</button>
       <p class="breadcrumb">
         <a href="https://systemslibrarian.github.io/crypto-lab/">← crypto-lab portfolio</a>
       </p>
-      <h1>Oblivious Shelf</h1>
-      <p class="subtitle">Information-Theoretic Private Information Retrieval — Chor, Goldreich, Kushilevitz &amp; Sudan (1995)</p>
-    </header>
+      <header class="cl-hero">
+        <div class="cl-hero-main">
+          <h1 class="cl-hero-title">Oblivious Shelf</h1>
+          <p class="cl-hero-sub">IT-PIR · Chor–Goldreich–Kushilevitz–Sudan 1995</p>
+          <p class="cl-hero-desc">Fetch a library catalog record by sending XOR-based queries to two non-colluding servers, watching each server stay blind to which book you requested.</p>
+        </div>
+        <aside class="cl-hero-why" aria-label="Why it matters">
+          <span class="cl-hero-why-label">WHY IT MATTERS</span>
+          <p class="cl-hero-why-text">What you read, search, or look up is sensitive metadata. IT-PIR lets a database answer your query while learning nothing about it — privacy guaranteed by information theory, not by trusting the operator.</p>
+        </aside>
+      </header>
+    </div>
   `;
 }
 
