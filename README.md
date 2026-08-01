@@ -29,11 +29,11 @@ Select any book from the 16-entry catalog grid to set it as the target index, th
 
 ## Real-World Usage
 
-- **RAID-PIR (Devet and Goldberg, 2014):** A practical IT-PIR system that distributes a large database across multiple servers using RAID-style XOR parity, enabling private queries over databases with millions of records at usable throughput.
+- **RAID-PIR (Demmler, Herzberg, and Schneider, CCSW 2014):** A practical IT-PIR system that distributes a large database across multiple servers using RAID-style XOR parity, enabling private queries over databases with millions of records at usable throughput.
 - **Percy++ (Ian Goldberg, University of Waterloo):** An open-source C++ library implementing both IT-PIR and CPIR protocols, used in academic privacy research and as a reference implementation for multi-server PIR schemes.
 - **PIR-Tor (Mittal et al., 2011):** A proposal to use IT-PIR for private Tor relay selection, allowing clients to fetch relay descriptors from directory servers without revealing which relays they intend to use.
 - **Popcorn (Gupta et al., 2016):** A media-streaming system using IT-PIR to let users retrieve video content from a library without the server learning which video was watched, targeting the Netflix-style content selection problem.
-- **Checklist (Henry and Goldberg, 2013):** A privacy-preserving messaging system built on IT-PIR, allowing users to retrieve messages from a bulletin board without revealing which messages they are reading.
+- **Checklist (Kogan and Corrigan-Gibbs, USENIX Security 2021):** A private blocklist-lookup system — used to prototype Safe Browsing–style URL checks — built on two-server offline/online PIR, so the server learns nothing about which entry the client looked up.
 
 ## How to Run Locally
 
@@ -52,5 +52,7 @@ npm run dev
 - [crypto-lab-silent-tally](https://systemslibrarian.github.io/crypto-lab-silent-tally/) — Shamir-based MPC secure sum.
 
 ---
+
+*One of 170+ browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
 
 *"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
