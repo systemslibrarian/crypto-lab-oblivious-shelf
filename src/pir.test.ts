@@ -90,8 +90,21 @@ describe('pirQuery — CORRECTNESS (recovers db[i])', () => {
         expect(r.responseA !== r.responseB).toBe(r.recovered);
         // S2 must be exactly S △ {i}.
         expect(r.subsetS2).toEqual(symmetricDifferenceWithElement(r.subsetS, i));
+        // The UI's "Checked:" verdict is printed from these two fields, so they
+        // have to be the real comparison, not a restatement of `recovered`.
+        expect(r.directBit).toBe(db[i]);
+        expect(r.correct).toBe(true);
       }
     }
+  });
+
+  it('correct goes false when the recovered bit disagrees with db[i]', () => {
+    // Negative control for the UI verdict: if the protocol output and the
+    // directly-read bit ever diverge, `correct` must report it.
+    const db = [true, false, true, false];
+    const r = pirQuery(db, 2);
+    expect(r.correct).toBe(r.recovered === r.directBit);
+    expect({ ...r, recovered: !r.recovered }.recovered === r.directBit).toBe(false);
   });
 
   it('recovers correctly for EVERY subset S (brute force, empty set included)', () => {

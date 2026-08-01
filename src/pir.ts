@@ -22,7 +22,9 @@ export interface PIRResult {
   subsetS2: Set<number>;   // S △ {i}
   responseA: boolean;       // XOR of db bits at positions in S
   responseB: boolean;       // XOR of db bits at positions in S △ {i}
-  recovered: boolean;       // responseA XOR responseB = db[i]
+  recovered: boolean;       // responseA XOR responseB — the protocol's output
+  directBit: boolean;       // db[i] read straight out of the database
+  correct: boolean;         // recovered === directBit — checked, not assumed
   db: boolean[];            // the database snapshot used
 }
 
@@ -103,7 +105,14 @@ export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
   // Step 6: client recovers db[i]
   const recovered = responseA !== responseB; // XOR of two booleans
 
-  return { subsetS, subsetS2, responseA, responseB, recovered, db };
+  // Correctness check. The page claims r_A ⊕ r_B = db[i]; rather than assert
+  // that, read db[i] directly and compare. `correct` is the only thing the UI
+  // is allowed to print a "verified" verdict from — if the protocol were
+  // implemented wrongly this would go false and the page would say so.
+  const directBit = db[targetIndex];
+  const correct = recovered === directBit;
+
+  return { subsetS, subsetS2, responseA, responseB, recovered, directBit, correct, db };
 }
 
 /**

@@ -23,7 +23,7 @@ Select any book from the 16-entry catalog grid to set it as the target index, th
 
 - **Server collusion:** if both servers share logs or are controlled by the same party, the guarantee fails — the scheme provides no protection against a colluding pair.
 - **Query linkage:** repeated queries from the same IP for the same item are not protected by PIR alone; traffic analysis can correlate queries over time.
-- **O(n) communication:** for a catalog of 1 million items, each query requires transmitting 1 million bits to each server — impractical without the engineering optimizations in systems like RAID-PIR.
+- **O(n) communication in the basic XOR scheme:** the construction this demo runs sends an n-bit subset indicator to each server, so a catalog of 1 million items costs 1 million bits per server per query. This is a property of the simplest scheme, not of 2-server IT-PIR in general — Chor et al.'s same paper gives a 2-server scheme with O(n^(1/3)) communication — but practical deployment still needs the engineering in systems like RAID-PIR.
 - **Implementation bugs in subset generation:** if the random subset S is not uniformly distributed, the privacy proof breaks. Use a cryptographically secure PRNG.
 - **Metadata leakage:** PIR protects the index, not the fact that a query occurred, its timing, its size, or the patron's identity.
 

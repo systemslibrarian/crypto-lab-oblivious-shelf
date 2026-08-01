@@ -378,23 +378,37 @@ function buildSectionC(): string {
         </p>
         <ul style="margin:0.75rem 0 0.75rem 1.5rem;line-height:2">
           <li><strong>Naive (download everything):</strong> <code>O(n)</code> bits — trivially private but impractical.</li>
-          <li><strong>2-server IT-PIR (Chor et al.):</strong> Two queries each of size <code>O(n)</code> bits (the subsets),
-            plus two 1-bit responses. Total: <code>O(n)</code> bits. Same asymptotic cost as naive, but with
-            information-theoretic privacy.</li>
+          <li><strong>Basic XOR scheme (the one this demo runs):</strong> Two queries each of size
+            <code>O(n)</code> bits (the subsets), plus two 1-bit responses. Total: <code>O(n)</code> bits.
+            Same asymptotic cost as naive, but with information-theoretic privacy.</li>
         </ul>
         <div class="explainer-box warning">
-          <strong>Fundamental inefficiency:</strong> This is the core tradeoff in IT-PIR.
-          Achieving perfect, information-theoretic privacy with 2 servers requires
-          <code>O(n)</code> communication. You pay the same bandwidth cost as downloading
-          the full database — but the server learns nothing. Subsequent work reduced this
-          cost with additional servers, but 2-server IT-PIR cannot do better than <code>O(n)</code>.
+          <strong>Where the cost goes:</strong> the <code>O(n)</code> here is the price of the
+          <em>simplest</em> 2-server construction, not of 2-server IT-PIR in general. Each
+          query is an <em>n</em>-bit subset indicator, so you move as many bits as you would
+          by downloading the database — you just move them in a form the server cannot read
+          an index out of. This demo uses the basic scheme because the arithmetic fits on a
+          screen, not because it is the best known.
         </div>
         <p>
-          Research following Chor et al. sought to improve communication cost. Woodruff and
-          Yekhanin (2005) achieved <code>O(n<sup>1/3</sup>)</code> with 3 servers using
-          matching vectors. Efremenko (2009) further reduced cost to sub-polynomial with a
-          constant number of servers. However, all IT-PIR schemes require at least
-          <code>Ω(log n / log log n)</code> communication.
+          The same paper does better. Chor, Goldreich, Kushilevitz and Sudan give a
+          <strong>2-server</strong> scheme with <code>O(n<sup>1/3</sup>)</code> total
+          communication, a <em>k</em>-server scheme with <code>O(n<sup>1/k</sup>)</code>, and a
+          scheme for <code>⅓·log₂n + 1</code> servers with polylogarithmic communication.
+          Ambainis (1997) improved the <em>k</em>-server case to
+          <code>O(n<sup>1/(2k−1)</sup>)</code> by recursing on their 2-server scheme.
+          Woodruff and Yekhanin (2005) gave a geometric construction matching
+          <code>O(n<sup>1/3</sup>)</code> for 2 servers with far less online server work.
+          Efremenko (2009), building on Yekhanin (2007), pushed 3-server communication to
+          sub-polynomial using matching-vector codes.
+        </p>
+        <p>
+          Lower bounds are the open end of the problem. Chor et al. note that the only
+          general lower bound is the obvious <code>Ω(log n)</code> — enough bits to name an
+          index — and it follows from communication complexity alone, without any privacy
+          argument. No super-logarithmic lower bound is known for a constant number of
+          servers, so the gap between <code>O(n<sup>1/3</sup>)</code> and
+          <code>Ω(log n)</code> is still open.
         </p>
       </div>
 
@@ -413,22 +427,32 @@ function buildSectionC(): string {
             <tbody>
               <tr>
                 <td>1</td>
-                <td class="impossible">Impossible (IT)</td>
-                <td class="impossible">—</td>
+                <td class="impossible">No non-trivial scheme exists</td>
+                <td class="impossible"><code>n</code> bits — download everything</td>
               </tr>
               <tr class="highlight">
                 <td>2</td>
-                <td>Chor et al. 1995</td>
+                <td>Chor et al. 1995 — basic XOR (this demo)</td>
                 <td><code>O(n)</code></td>
               </tr>
               <tr>
-                <td>3</td>
-                <td>Woodruff-Yekhanin 2005</td>
+                <td>2</td>
+                <td>Chor et al. 1995 — covering-codes construction</td>
                 <td><code>O(n<sup>1/3</sup>)</code></td>
               </tr>
               <tr>
+                <td>2</td>
+                <td>Woodruff-Yekhanin 2005 — geometric</td>
+                <td><code>O(n<sup>1/3</sup>)</code>, less server work</td>
+              </tr>
+              <tr>
                 <td>k</td>
-                <td>Efremenko 2009</td>
+                <td>Ambainis 1997</td>
+                <td><code>O(n<sup>1/(2k−1)</sup>)</code></td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Efremenko 2009 — matching-vector codes</td>
                 <td>sub-polynomial</td>
               </tr>
             </tbody>
@@ -495,11 +519,18 @@ function buildSectionD(): string {
       <div class="subsection">
         <h3>D1 — The Legal Landscape</h3>
         <p>
-          The USA PATRIOT Act (2001), Section 215, authorized federal law enforcement to
-          compel disclosure of library circulation records and patron databases via a
-          National Security Letter, accompanied by a gag order prohibiting the library from
-          notifying the patron or the public. Librarians who received such orders were legally
-          barred from disclosing their existence.
+          The USA PATRIOT Act (2001) created two distinct pressures on libraries, and they
+          are routinely confused. <strong>Section 215</strong> rewrote the FISA business-records
+          provision so the FBI could <em>apply to a judge of the Foreign Intelligence
+          Surveillance Court</em> for an ex parte order compelling production of "any tangible
+          things (including books, records, papers, documents, and other items)" — circulation
+          records and patron databases among them — with a statutory bar on disclosing that the
+          order had been received. <strong>Section 505</strong> separately expanded the
+          <em>National Security Letter</em> authorities, which the FBI issues on its own
+          signature with no prior judicial approval at all. The case librarians actually
+          litigated — Library Connection in Connecticut, 2005 — was an NSL, not a Section 215
+          order. A demo that says "PATRIOT Act NSL" as though it were one thing gets the
+          threat model wrong: one mechanism has a judge in the loop and the other does not.
         </p>
         <p>
           The American Library Association responded with formal policy guidance reaffirming
@@ -917,12 +948,20 @@ function renderRecovery(result: ReturnType<typeof pirQuery>, idx: number): strin
   const ra = result.responseA ? '1' : '0';
   const rb = result.responseB ? '1' : '0';
   const rec = result.recovered ? '1' : '0';
+  const direct = result.directBit ? '1' : '0';
   const label = result.recovered ? 'Checked out' : 'Available';
   const badgeClass = result.recovered ? 'checked-out' : 'available';
+  // The "matches" verdict is read off result.correct, which pir.ts computed by
+  // comparing the protocol output against db[i] read directly. It is not a
+  // decoration: a broken protocol makes this line say "DOES NOT MATCH".
+  const verdict = result.correct
+    ? `matches db[${idx}] = <strong>${direct}</strong> read directly from the database`
+    : `<strong>DOES NOT MATCH</strong> db[${idx}] = ${direct} read directly — the protocol is broken`;
   return (
     `<span class="recovery-eq">r<sub>A</sub>(${ra}) <span class="xor-op">⊕</span> ` +
-    `r<sub>B</sub>(${rb}) = db[${idx}] = <strong>${rec}</strong></span>` +
-    `<span class="result-badge ${badgeClass}">${label}</span>`
+    `r<sub>B</sub>(${rb}) = <strong>${rec}</strong></span>` +
+    `<span class="result-badge ${badgeClass}">${label}</span>` +
+    `<div class="muted" style="margin-top:0.4rem">Checked: ${verdict}.</div>`
   );
 }
 
