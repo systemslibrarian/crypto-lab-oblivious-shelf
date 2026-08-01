@@ -5,6 +5,7 @@ import {
   generateDatabase,
   formatSet,
   xorResponse,
+  consistentTargets,
 } from './pir.ts';
 
 // ---------- Database: generated once per session ----------
@@ -62,7 +63,7 @@ function buildHeader(): string {
         <div class="cl-hero-main">
           <h1 class="cl-hero-title">Oblivious Shelf</h1>
           <p class="cl-hero-sub">IT-PIR · Chor–Goldreich–Kushilevitz–Sudan 1995</p>
-          <p class="cl-hero-desc">Fetch a library catalog record by sending XOR-based queries to two non-colluding servers, watching each server stay blind to which book you requested.</p>
+          <p class="cl-hero-desc">Fetch one bit of a library catalog record — its checked-out flag — by sending XOR-based queries to two non-colluding servers, watching each server stay blind to which book you requested.</p>
         </div>
         <aside class="cl-hero-why" aria-label="Why it matters">
           <span class="cl-hero-why-label">WHY IT MATTERS</span>
@@ -95,10 +96,10 @@ function buildSectionA(): string {
             Single-server setup — the server learns which book you want
           </p>
           <div class="pir-diagram pir-diagram--single" role="img"
-               aria-label="The patron asks a single library server for book number 9. The server returns the book, but now knows the patron wanted book number 9 — a privacy leak.">
+               aria-label="The patron asks a single library server for the book they selected. The server returns it, but now knows which book was wanted — a privacy leak.">
             <div class="pir-node patron">
               <div class="node-label">Patron</div>
-              wants book #9
+              wants book <span class="ex-target" id="diag-single-target">#9</span>
             </div>
             <div class="pir-arrow danger">
               <span>Which book?</span>
@@ -109,7 +110,7 @@ function buildSectionA(): string {
               <div class="node-label">Library Server</div>
               📚 db[0..15]
               <div style="margin-top:0.35rem;font-size:0.7rem;color:var(--error)">
-                ✗ I now know you<br>wanted book #9
+                ✗ I now know you<br>wanted book <span class="ex-target" id="diag-single-known">#9</span>
               </div>
             </div>
             <div class="pir-arrow danger" style="transform:scaleX(-1)">
@@ -132,10 +133,10 @@ function buildSectionA(): string {
             IT-PIR setup — two non-colluding servers, neither learns the target
           </p>
           <div class="pir-diagram" role="img"
-               aria-label="The patron sends set S to Server A and the set S symmetric-difference {9} to Server B. Each server sees only a random-looking set, so neither one learns that book number 9 was requested.">
+               aria-label="The patron sends set S to Server A and the set S symmetric-difference with the selected index to Server B. Each server sees only a random-looking set, so neither one learns which book was requested.">
             <div class="pir-node patron">
               <div class="node-label">Patron</div>
-              wants book #9
+              wants book <span class="ex-target" id="diag-pir-target">#9</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:1rem">
               <div class="pir-arrow safe-a">
@@ -143,7 +144,7 @@ function buildSectionA(): string {
                 <div class="arrow-line"></div>
               </div>
               <div class="pir-arrow safe-b">
-                <span>Query S△{9}</span>
+                <span>Query S△{<span class="ex-target" id="diag-pir-sd">9</span>}</span>
                 <div class="arrow-line"></div>
               </div>
             </div>
@@ -159,7 +160,7 @@ function buildSectionA(): string {
                 <div class="node-label">Server B</div>
                 📚 db[0..15]
                 <div style="margin-top:0.35rem;font-size:0.7rem;color:var(--warning)">
-                  ✓ Sees only S△{9}<br>(random-looking)
+                  ✓ Sees only S△{<span class="ex-target" id="diag-pir-sd-b">9</span>}<br>(random-looking)
                 </div>
               </div>
             </div>
@@ -348,12 +349,12 @@ function buildSectionB(): string {
             <div class="server-view-box server-a">
               <div class="sv-label">Server A's View</div>
               <div class="sv-set" id="sv-a-set">—</div>
-              <div class="sv-note">Server A cannot distinguish which element of S (if any) is the target.</div>
+              <div class="sv-note" id="sv-a-note">Run a query — this line reports how many books remain consistent with Server A's view.</div>
             </div>
             <div class="server-view-box server-b">
               <div class="sv-label">Server B's View</div>
               <div class="sv-set" id="sv-b-set">—</div>
-              <div class="sv-note">Server B cannot distinguish which element was toggled.</div>
+              <div class="sv-note" id="sv-b-note">Run a query — this line reports how many books remain consistent with Server B's view.</div>
             </div>
           </div>
         </div>
@@ -703,6 +704,11 @@ function initCatalogCards(): void {
   function selectCard(index: number): void {
     selectedIndex = index;
 
+    // Section A's two diagrams used to say "wants book #9" and "Query S△{9}"
+    // as literals, while the live target is whatever the learner picked. Keep
+    // them in step with the selection so the explanation and the run agree.
+    syncDiagramTarget(index);
+
     // Update card highlights / selection state
     cards.forEach((card) => {
       const isSel = card.dataset.index === String(index);
@@ -847,13 +853,22 @@ function runQuery(targetIndex: number): void {
         `<span class="muted"> — element ${targetIndex} toggled</span>`,
     },
     {
+      // Steps 5 and 6 are the SERVERS' computations. They used to be rendered
+      // with the target term highlighted, inside panels captioned "Server A
+      // cannot distinguish which element of S is the target" — the page drew
+      // the distinction it said was impossible. No target is passed now, so
+      // there is no highlight to draw.
       title: 'Step 5 — Server A computes',
-      body: renderXorChain(DB, result.subsetS, targetIndex),
+      body:
+        renderXorChain(DB, result.subsetS) +
+        `<div class="muted" style="margin-top:0.35rem">Nothing is highlighted here: this is Server A's view, and nothing in it marks the target.</div>`,
       className: 'xor-chain',
     },
     {
       title: 'Step 6 — Server B computes',
-      body: renderXorChain(DB, result.subsetS2, targetIndex),
+      body:
+        renderXorChain(DB, result.subsetS2) +
+        `<div class="muted" style="margin-top:0.35rem">Server B sees one term more, or one fewer, than A — but not which one.</div>`,
       className: 'xor-chain',
     },
     {
@@ -917,6 +932,23 @@ function runQuery(targetIndex: number): void {
   });
 }
 
+/**
+ * Point Section A's explanatory diagrams at the book the learner actually
+ * selected. They shipped with the literal 9 baked into five places while the
+ * live target is `selectedIndex`, so a learner who picked #3 read an
+ * explanation about a different book than the one they were about to fetch.
+ */
+function syncDiagramTarget(index: number): void {
+  for (const id of ['diag-single-target', 'diag-single-known', 'diag-pir-target']) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = `#${index}`;
+  }
+  for (const id of ['diag-pir-sd', 'diag-pir-sd-b']) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = String(index);
+  }
+}
+
 /** Render a set as highlighted HTML, optionally emphasizing the target element. */
 function renderSet(s: Set<number>, target?: number): string {
   const sorted = [...s].sort((a, b) => a - b);
@@ -930,13 +962,17 @@ function renderSet(s: Set<number>, target?: number): string {
   return `<span class="set">{ ${els} }</span>`;
 }
 
-/** Render the XOR chain as HTML, highlighting the db[target] term. */
-function renderXorChain(db: boolean[], subset: Set<number>, target: number): string {
+/**
+ * Render the XOR chain as HTML. `target` is optional and MUST be omitted for
+ * anything drawn as a server's view — passing it highlights the term a server
+ * provably cannot identify.
+ */
+function renderXorChain(db: boolean[], subset: Set<number>, target?: number): string {
   const sorted = [...subset].sort((a, b) => a - b);
   if (sorted.length === 0) return '<span class="muted">(empty set)</span> = <strong>0</strong>';
   const terms = sorted
     .map((j) => {
-      const cls = j === target ? ' xor-term--target' : '';
+      const cls = target !== undefined && j === target ? ' xor-term--target' : '';
       return `<span class="xor-term${cls}">db[${j}]<span class="bit">(${db[j] ? '1' : '0'})</span></span>`;
     })
     .join('<span class="xor-op"> ⊕ </span>');
@@ -961,19 +997,36 @@ function renderRecovery(result: ReturnType<typeof pirQuery>, idx: number): strin
     `<span class="recovery-eq">r<sub>A</sub>(${ra}) <span class="xor-op">⊕</span> ` +
     `r<sub>B</sub>(${rb}) = <strong>${rec}</strong></span>` +
     `<span class="result-badge ${badgeClass}">${label}</span>` +
-    `<div class="muted" style="margin-top:0.4rem">Checked: ${verdict}.</div>`
+    `<div class="muted" style="margin-top:0.4rem">Checked: ${verdict}.</div>` +
+    `<div class="muted" style="margin-top:0.25rem">One bit crossed the wire, not a record. ` +
+    `The title, author and call number shown on this page come from the catalog copy already in your browser ` +
+    `(<code>catalog.ts</code>) and were never requested from either server — the protocol retrieved ` +
+    `<code>db[${idx}]</code>, the checked-out flag, and nothing else.</div>`
   );
 }
 
 function renderPrivacyProof(result: ReturnType<typeof pirQuery>, idx: number): string {
   const sStr = formatSet(result.subsetS);
   const s2Str = formatSet(result.subsetS2);
+  const n = result.db.length;
+  // Enumerated, not asserted: for each of the n candidate targets, reconstruct
+  // the S the patron would have had to draw and check it reproduces this
+  // server's exact view. Survivors are the indices that server cannot rule out.
+  const candA = consistentTargets(result.subsetS, n, 'A');
+  const candB = consistentTargets(result.subsetS2, n, 'B');
+  const verdict =
+    candA.length === n && candB.length === n
+      ? `Both anonymity sets are the whole catalog: neither server can rule out a single book.`
+      : `<strong>Anonymity set smaller than the catalog</strong> — one of the servers can rule some books out. ` +
+        `That should not happen with this scheme; if you are reading this, the query construction is leaking.`;
   return (
     `<strong>Server A</strong> saw S = <span class="set">${sStr}</span>. ` +
-    `Uniformly random — every subset is equally likely regardless of target #${idx}, ` +
-    `so it reveals nothing about which book was wanted.<br>` +
-    `<strong>Server B</strong> saw S△{${idx}} = <span class="set">${s2Str}</span>. ` +
-    `Also uniformly random, and also reveals nothing about #${idx}.`
+    `Candidate targets consistent with that view, checked one by one: ` +
+    `<strong>${candA.length} of ${n}</strong>.<br>` +
+    `<strong>Server B</strong> saw S△{i} = <span class="set">${s2Str}</span>. ` +
+    `Candidate targets consistent with that view: <strong>${candB.length} of ${n}</strong>.<br>` +
+    `${verdict} The real target was #${idx} — a fact only you and this page's own bookkeeping hold; ` +
+    `it never appears in either server's input.`
   );
 }
 
@@ -986,6 +1039,23 @@ function updateServerViews(result: ReturnType<typeof pirQuery>): void {
 
   svASet.textContent = `S = ${formatSet(result.subsetS)}`;
   svBSet.textContent = `S△{i} = ${formatSet(result.subsetS2)}`;
+
+  // The two notes used to be fixed sentences asserting indistinguishability.
+  // Print the measured anonymity set instead.
+  const n = result.db.length;
+  const candA = consistentTargets(result.subsetS, n, 'A');
+  const candB = consistentTargets(result.subsetS2, n, 'B');
+  const noteA = document.getElementById('sv-a-note');
+  const noteB = document.getElementById('sv-b-note');
+  if (noteA) {
+    noteA.textContent =
+      `${candA.length} of ${n} books are consistent with this view — checked candidate by candidate, ` +
+      `so Server A can rule out ${n - candA.length}.`;
+  }
+  if (noteB) {
+    noteB.textContent =
+      `${candB.length} of ${n} books are consistent with this view — Server B can rule out ${n - candB.length}.`;
+  }
 }
 
 // ================================================================

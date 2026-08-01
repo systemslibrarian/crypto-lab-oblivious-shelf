@@ -116,6 +116,42 @@ export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
 }
 
 /**
+ * The anonymity set: every target index that is consistent with what ONE
+ * server observed.
+ *
+ * The page used to assert "Server A cannot distinguish which element of S (if
+ * any) is the target" as a fixed sentence. This derives it instead. For each
+ * candidate j we reconstruct the subset S the patron must have drawn for that
+ * candidate to produce the observed view, then re-run this server's side of the
+ * protocol and check it reproduces the view exactly. A candidate survives only
+ * if that round-trip closes.
+ *
+ * The model this encodes is the one `randomSubset` implements: S is drawn
+ * uniformly over all subsets of {0..n-1}, independently of the target. If that
+ * ever stops being true — if some future edit made the target's membership in S
+ * depend on the target — this function's model would have to change with it,
+ * and `pir.test.ts` pins the independence empirically so the drift is caught.
+ */
+export function consistentTargets(view: Set<number>, n: number, role: 'A' | 'B'): number[] {
+  const survivors: number[] = [];
+  for (let j = 0; j < n; j++) {
+    // The S the patron must have drawn for candidate j to yield this view.
+    const impliedS = role === 'A' ? new Set(view) : symmetricDifferenceWithElement(view, j);
+    // A legal draw is any subset of {0..n-1}.
+    if (![...impliedS].every((x) => Number.isInteger(x) && x >= 0 && x < n)) continue;
+    // Re-run this server's side and require the observed view back.
+    const produced = role === 'A' ? impliedS : symmetricDifferenceWithElement(impliedS, j);
+    if (produced.size !== view.size) continue;
+    let matches = true;
+    for (const x of produced) {
+      if (!view.has(x)) { matches = false; break; }
+    }
+    if (matches) survivors.push(j);
+  }
+  return survivors;
+}
+
+/**
  * Generate a random boolean database of length n using CSPRNG.
  */
 export function generateDatabase(n: number): boolean[] {

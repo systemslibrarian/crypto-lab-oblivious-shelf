@@ -5,6 +5,7 @@ import {
   generateDatabase,
   pirQuery,
   randomSubset,
+  consistentTargets,
   symmetricDifferenceWithElement,
   xorResponse,
 } from './pir';
@@ -255,5 +256,68 @@ describe('presentation helpers', () => {
     const db = generateDatabase(10);
     expect(db).toHaveLength(10);
     expect(db.every((b) => typeof b === 'boolean')).toBe(true);
+  });
+});
+
+/**
+ * The server-view panels used to carry the fixed sentence "Server A cannot
+ * distinguish which element of S (if any) is the target" — while steps 5 and 6,
+ * captioned "Server A computes" and "Server B computes", highlighted the target
+ * term in the XOR chain. The panels now print an anonymity set computed by
+ * consistentTargets(). These pin what that function reports, and pin the
+ * property it models: the subset the patron draws is independent of the target.
+ */
+describe('anonymity set from one server view', () => {
+  it('leaves every index consistent with Server A view, for any run', () => {
+    const n = 16;
+    const db = generateDatabase(n);
+    for (let target = 0; target < n; target++) {
+      const r = pirQuery(db, target);
+      const cand = consistentTargets(r.subsetS, n, 'A');
+      expect(cand).toHaveLength(n);
+      expect(cand).toContain(target);
+    }
+  });
+
+  it('leaves every index consistent with Server B view, for any run', () => {
+    const n = 16;
+    const db = generateDatabase(n);
+    for (let target = 0; target < n; target++) {
+      const r = pirQuery(db, target);
+      const cand = consistentTargets(r.subsetS2, n, 'B');
+      expect(cand).toHaveLength(n);
+      expect(cand).toContain(target);
+    }
+  });
+
+  it('is falsifiable: a view that could not have come from the scheme drops candidates', () => {
+    // Server B's reconstruction requires S = view triangle {j} to be a legal
+    // subset of {0..n-1}. Feed it a view containing an out-of-range element and
+    // every candidate is ruled out, so the function is not a constant.
+    const bogus = new Set([0, 1, 99]);
+    expect(consistentTargets(bogus, 16, 'B')).toHaveLength(0);
+    expect(consistentTargets(bogus, 16, 'A')).toHaveLength(0);
+  });
+
+  it('the drawn subset is independent of the target (per-index inclusion ~ 1/2)', () => {
+    // If randomSubset ever became target-dependent, the anonymity-set model
+    // above would be wrong. Measure it: for each target, S should include each
+    // index about half the time, with no dependence on which target was asked.
+    const n = 16;
+    const db = generateDatabase(n);
+    const trials = 400;
+    for (let target = 0; target < n; target++) {
+      const hits = new Array<number>(n).fill(0);
+      for (let t = 0; t < trials; t++) {
+        const r = pirQuery(db, target);
+        for (const j of r.subsetS) hits[j] += 1;
+      }
+      for (let j = 0; j < n; j++) {
+        const rate = hits[j] / trials;
+        // Generous band: 400 fair coins land in [0.40, 0.60] overwhelmingly.
+        expect(rate).toBeGreaterThan(0.35);
+        expect(rate).toBeLessThan(0.65);
+      }
+    }
   });
 });
