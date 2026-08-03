@@ -809,8 +809,17 @@ function clearWalkthrough(): void {
   // Cancel any pending step animations from a previous run
   pendingTimeouts.forEach((id) => clearTimeout(id));
   pendingTimeouts = [];
+  // `finish()` rides on the LAST pending timeout, so cancelling them cancels it
+  // too. Anything finish() would have reset has to be reset here, or an
+  // interrupted run leaves the page permanently mid-run: `isRunning` stays true,
+  // both buttons' `!isRunning` guard rejects every click, and the walkthrough
+  // stays aria-busy="true" for a run that is never coming.
+  isRunning = false;
   const wt = document.getElementById('walkthrough');
-  if (wt) wt.innerHTML = '';
+  if (wt) {
+    wt.innerHTML = '';
+    wt.setAttribute('aria-busy', 'false');
+  }
   const sv = document.getElementById('server-views');
   if (sv) sv.style.display = 'none';
 }
@@ -825,8 +834,9 @@ function announce(message: string): void {
 }
 
 function runQuery(targetIndex: number): void {
-  isRunning = true;
+  // clearWalkthrough() resets isRunning, so claim the flag after it, not before.
   clearWalkthrough();
+  isRunning = true;
 
   const result = pirQuery(DB, targetIndex);
   const entry = CATALOG[targetIndex];
