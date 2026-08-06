@@ -17,7 +17,7 @@ async function revealEverything(page: Page): Promise<void> {
       animation: none !important;
       transition: none !important;
     }
-    .walk-step { opacity: 1 !important; transform: none !important; }`,
+    .walk-step { transform: none !important; }`,
   });
 
   await page.evaluate(() => {
