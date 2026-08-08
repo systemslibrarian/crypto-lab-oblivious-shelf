@@ -965,7 +965,11 @@ pre code {
 
 .set-el--target {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
-  color: var(--accent-hover);
+  /* --text, not --accent-hover: the 28% accent wash lightens the chip toward
+     the same hue --accent-hover already is, so the two converged at 3.84:1 in
+     light theme. The chip is already carrying meaning through its border and
+     fill; the digit inside it just needs to be readable. */
+  color: var(--text);
   border: 1px solid var(--accent);
   border-radius: 3px;
   padding: 0.02em 0.32em;

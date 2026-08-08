@@ -554,7 +554,7 @@ function buildSectionD(): string {
 
       <div class="subsection">
         <h3>D2 — Where IT-PIR Fits</h3>
-        <div style="overflow-x:auto">
+        <div style="overflow-x:auto" role="region" tabindex="0" aria-label="Privacy approach comparison">
           <table class="comparison-table">
             <caption class="sr-only">Privacy approach comparison</caption>
             <thead>
