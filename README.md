@@ -2,14 +2,14 @@
 
 ## What It Is
 
-crypto-lab-oblivious-shelf implements the 2-server Information-Theoretic Private Information Retrieval (IT-PIR) scheme from Chor, Goldreich, Kushilevitz, and Sudan (1995). A patron retrieves an entry from a 16-item library catalog by sending XOR-based queries to two non-colluding servers, neither of which learns which entry was requested. The protocol solves the database-query privacy problem: how to fetch a specific record from a remote database without the database operator learning which record was fetched. The security model is information-theoretic — the server provably learns nothing regardless of its computational power, requiring no cryptographic hardness assumptions.
+crypto-lab-oblivious-shelf implements the basic 2-server XOR Information-Theoretic Private Information Retrieval (IT-PIR) construction from Chor, Goldreich, Kushilevitz, and Sudan (1995). A patron chooses one of 16 books, but the protocol retrieves only that book's one-bit checked-out flag, not its title or full catalog record. One server receives a uniformly random subset and the other receives that subset with the target index toggled. Provided the randomness is uniform and independent, both servers hold the same database, the servers do not collude, and each server's view is limited to its protocol query, either query's distribution is statistically independent of the target index. This browser app simulates both servers for teaching; it is not a deployed private retrieval service.
 
 ## When to Use It
 
-- Use IT-PIR when patrons must retrieve catalog records without the server logging which record was accessed, and legal or policy protections alone are insufficient.
-- Use it when you need privacy guarantees that hold even if the adversary has unlimited computation — computational PIR is not sufficient.
-- Use it in multi-server deployments (e.g. mirrored library systems) where servers are genuinely operated independently.
-- Do not use it as the sole privacy measure — IT-PIR protects the query, not the physical borrowing transaction, the IP address, or query timing.
+- Use this lab to study how two correlated XOR queries recover one database bit while either protocol query alone hides its target.
+- Use IT-PIR designs when the required non-collusion, identical-database, randomness, and network-metadata assumptions can be enforced and audited.
+- Use information-theoretic PIR when privacy must not depend on a computational hardness assumption.
+- Do not use PIR as the sole privacy measure — it hides the requested index within its protocol model, not the physical borrowing transaction, patron identity, IP address, or query timing.
 - Do not use the 2-server scheme when both servers are operated by the same institution — collusion collapses the guarantee immediately.
 - Do NOT treat this as production infrastructure — it is a browser teaching demo with simulated servers, not a deployed PIR service.
 
@@ -17,7 +17,7 @@ crypto-lab-oblivious-shelf implements the 2-server Information-Theoretic Private
 
 **[systemslibrarian.github.io/crypto-lab-oblivious-shelf](https://systemslibrarian.github.io/crypto-lab-oblivious-shelf/)**
 
-Select any book from the 16-entry catalog grid to set it as the target index, then click **Generate Query** to run the full 2-server XOR PIR protocol with real arithmetic. Each step — random subset generation, symmetric difference, server-side XOR computation, and client-side recovery — is displayed sequentially in the walkthrough panel. Click **Run Again** to re-run with a fresh random subset S, demonstrating that each query looks different even for the same target. The privacy audit panel below the walkthrough shows exactly what each server sees, confirming that neither server's view reveals the target index.
+Select any book from the 16-entry catalog grid to set it as the target index, then click **Generate Query** to run the full 2-server XOR PIR protocol with real arithmetic. Each step — random subset generation, symmetric difference, server-side XOR computation, and client-side recovery — is displayed sequentially in the walkthrough panel. Click **Run Again** to draw another independent subset S; a repeat is possible, although unlikely for this 16-bit example. The privacy audit panel shows the protocol query each simulated server sees and derives which targets remain consistent with that view. It does not model transport metadata, server collusion, or auxiliary logs.
 
 ## What Can Go Wrong
 
@@ -27,13 +27,21 @@ Select any book from the 16-entry catalog grid to set it as the target index, th
 - **Implementation bugs in subset generation:** if the random subset S is not uniformly distributed, the privacy proof breaks. Use a cryptographically secure PRNG.
 - **Metadata leakage:** PIR protects the index, not the fact that a query occurred, its timing, its size, or the patron's identity.
 
-## Real-World Usage
+## Research Systems and Prototypes
 
-- **RAID-PIR (Demmler, Herzberg, and Schneider, CCSW 2014):** A practical IT-PIR system that distributes a large database across multiple servers using RAID-style XOR parity, enabling private queries over databases with millions of records at usable throughput.
-- **Percy++ (Ian Goldberg, University of Waterloo):** An open-source C++ library implementing both IT-PIR and CPIR protocols, used in academic privacy research and as a reference implementation for multi-server PIR schemes.
-- **PIR-Tor (Mittal et al., 2011):** A proposal to use IT-PIR for private Tor relay selection, allowing clients to fetch relay descriptors from directory servers without revealing which relays they intend to use.
-- **Popcorn (Gupta et al., 2016):** A media-streaming system using IT-PIR to let users retrieve video content from a library without the server learning which video was watched, targeting the Netflix-style content selection problem.
-- **Checklist (Kogan and Corrigan-Gibbs, USENIX Security 2021):** A private blocklist-lookup system — used to prototype Safe Browsing–style URL checks — built on two-server offline/online PIR, so the server learns nothing about which entry the client looked up.
+- **[RAID-PIR](https://encrypto.de/papers/DHS14.pdf) (Demmler, Herzberg, and Schneider, 2014):** A multi-server PIR design that combines pseudorandomly expanded queries with RAID-inspired striping, mirroring, and parity techniques to reduce storage and communication costs.
+- **[Percy++](https://crysp.uwaterloo.ca/software/) (University of Waterloo):** An open-source C++ library implementing information-theoretic and computational PIR protocols for research and experimentation.
+- **[PIR-Tor](https://www.usenix.org/conference/usenix-security-11/pir-tor-scalable-anonymous-communication-using-private-information) (Mittal et al., 2011):** A Tor-directory design that evaluates both computational and information-theoretic PIR architectures for privately retrieving relay information.
+- **[Popcorn](https://www.usenix.org/system/files/conference/nsdi16/nsdi16-paper-gupta-trinabh-update.pdf) (Gupta et al., 2016):** A video-delivery prototype that composes information-theoretic and computational PIR components rather than relying on IT-PIR alone.
+- **[Checklist](https://www.usenix.org/conference/usenixsecurity21/presentation/kogan) (Kogan and Corrigan-Gibbs, 2021):** A two-server, offline/online PIR system for private blocklist lookups, evaluated with Safe Browsing data.
+
+## Primary References
+
+- [Chor, Goldreich, Kushilevitz, and Sudan, *Private Information Retrieval*](https://madhu.seas.harvard.edu/papers/1995/pir-journ.pdf)
+- [Dvir and Gopi, *2-Server PIR with Sub-polynomial Communication*](https://arxiv.org/abs/1407.6692)
+- [United States Code, 50 U.S.C. § 1861](https://www.govinfo.gov/link/uscode/50/1861)
+- [United States Code, 18 U.S.C. § 2709](https://www.govinfo.gov/link/uscode/18/2709)
+- [American Library Association guidance on law-enforcement inquiries](https://www.ala.org/advocacy/privacy/lawenforcement/inquiries)
 
 ## How to Run Locally
 

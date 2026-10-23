@@ -3,6 +3,7 @@ import {
   buildXorChain,
   formatSet,
   generateDatabase,
+  MAX_DATABASE_BITS,
   pirQuery,
   randomSubset,
   consistentTargets,
@@ -54,6 +55,13 @@ describe('xorResponse', () => {
       expect(xorResponse(db, s)).toBe(expected);
     }
   });
+
+  it('rejects malformed databases and subset indices instead of coercing them', () => {
+    expect(() => xorResponse([true, 1 as unknown as boolean], new Set([0]))).toThrow(TypeError);
+    expect(() => xorResponse([true], new Set([1]))).toThrow(RangeError);
+    expect(() => xorResponse([true], new Set([0.5]))).toThrow(RangeError);
+    expect(() => xorResponse([true], [0] as unknown as Set<number>)).toThrow(TypeError);
+  });
 });
 
 describe('symmetricDifferenceWithElement', () => {
@@ -76,6 +84,15 @@ describe('symmetricDifferenceWithElement', () => {
       const twice = symmetricDifferenceWithElement(once, i);
       expect([...twice].sort((a, b) => a - b)).toEqual([...s].sort((a, b) => a - b));
     }
+  });
+
+  it('rejects malformed sets and indices', () => {
+    expect(() => symmetricDifferenceWithElement(new Set([NaN]), 0)).toThrow(RangeError);
+    expect(() => symmetricDifferenceWithElement(new Set([0]), -1)).toThrow(RangeError);
+    expect(() => symmetricDifferenceWithElement(new Set([0]), 0.5)).toThrow(RangeError);
+    expect(() =>
+      symmetricDifferenceWithElement([0] as unknown as Set<number>, 0)
+    ).toThrow(TypeError);
   });
 });
 
@@ -127,6 +144,25 @@ describe('pirQuery — CORRECTNESS (recovers db[i])', () => {
     expect(() => pirQuery(db, -1)).toThrow(RangeError);
     expect(() => pirQuery(db, 8)).toThrow(RangeError);
     expect(() => pirQuery(db, 100)).toThrow(RangeError);
+    expect(() => pirQuery(db, 1.5)).toThrow(RangeError);
+    expect(() => pirQuery(db, NaN)).toThrow(RangeError);
+  });
+
+  it('rejects empty or non-boolean databases', () => {
+    expect(() => pirQuery([], 0)).toThrow(RangeError);
+    expect(() => pirQuery([true, 0 as unknown as boolean], 0)).toThrow(TypeError);
+    expect(() => pirQuery('10' as unknown as boolean[], 0)).toThrow(TypeError);
+  });
+
+  it('uses and returns a snapshot rather than the caller-owned array', () => {
+    const db = [true, false, true];
+    const r = pirQuery(db, 1);
+    db[1] = true;
+
+    expect(r.db).not.toBe(db);
+    expect(r.db).toEqual([true, false, true]);
+    expect(r.directBit).toBe(false);
+    expect(r.correct).toBe(true);
   });
 });
 
@@ -142,9 +178,14 @@ describe('randomSubset — unbiased and well-formed', () => {
     }
   });
 
-  it('returns an empty set for n <= 0', () => {
+  it('returns an empty set for n = 0', () => {
     expect(randomSubset(0).size).toBe(0);
-    expect(randomSubset(-3).size).toBe(0);
+  });
+
+  it('rejects unsafe, fractional, negative, and unbounded sizes', () => {
+    for (const n of [-1, 1.5, NaN, Infinity, MAX_DATABASE_BITS + 1]) {
+      expect(() => randomSubset(n)).toThrow(RangeError);
+    }
   });
 
   it('each element is included ~50% of the time (fair coin per element)', () => {
@@ -257,6 +298,21 @@ describe('presentation helpers', () => {
     expect(db).toHaveLength(10);
     expect(db.every((b) => typeof b === 'boolean')).toBe(true);
   });
+
+  it('chunks large Web Crypto requests and rejects invalid sizes', () => {
+    const db = generateDatabase(65_537);
+    expect(db).toHaveLength(65_537);
+    expect(db.every((b) => typeof b === 'boolean')).toBe(true);
+
+    for (const n of [-1, 0.5, NaN, MAX_DATABASE_BITS + 1]) {
+      expect(() => generateDatabase(n)).toThrow(RangeError);
+    }
+  });
+
+  it('validates sets before presenting them', () => {
+    expect(() => formatSet(new Set([-1]))).toThrow(RangeError);
+    expect(() => buildXorChain([true], new Set([1]))).toThrow(RangeError);
+  });
 });
 
 /**
@@ -290,13 +346,14 @@ describe('anonymity set from one server view', () => {
     }
   });
 
-  it('is falsifiable: a view that could not have come from the scheme drops candidates', () => {
-    // Server B's reconstruction requires S = view triangle {j} to be a legal
-    // subset of {0..n-1}. Feed it a view containing an out-of-range element and
-    // every candidate is ruled out, so the function is not a constant.
+  it('rejects a view that could not have come from the scheme', () => {
     const bogus = new Set([0, 1, 99]);
-    expect(consistentTargets(bogus, 16, 'B')).toHaveLength(0);
-    expect(consistentTargets(bogus, 16, 'A')).toHaveLength(0);
+    expect(() => consistentTargets(bogus, 16, 'B')).toThrow(RangeError);
+    expect(() => consistentTargets(bogus, 16, 'A')).toThrow(RangeError);
+    expect(() => consistentTargets(new Set([0]), 0, 'A')).toThrow(RangeError);
+    expect(() =>
+      consistentTargets(new Set([0]), 16, 'invalid' as unknown as 'A')
+    ).toThrow(TypeError);
   });
 
   it('the drawn subset is independent of the target (per-index inclusion ~ 1/2)', () => {
