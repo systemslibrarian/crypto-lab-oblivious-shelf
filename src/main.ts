@@ -7,6 +7,12 @@ import {
   xorResponse,
   consistentTargets,
 } from './pir.ts';
+import {
+  buildRobustSection,
+  initRobustSection,
+  retireRobustResult,
+  setRobustTarget,
+} from './robust-ui.ts';
 
 // ---------- Database: generated once per session ----------
 const DB: boolean[] = generateDatabase(DB_SIZE);
@@ -23,6 +29,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = buildHTML();
 initThemeToggle();
 initCatalogCards();
 initQueryPanel();
+initRobustSection(DB, () => selectedIndex);
 
 // ================================================================
 // HTML BUILDER
@@ -35,6 +42,7 @@ function buildHTML(): string {
       <a href="#section-b">B: Live Demo</a>
       <a href="#section-c">C: Communication Cost</a>
       <a href="#section-d">D: Librarian's Dilemma</a>
+      <a href="#section-e">E: Robust Shelf</a>
     </nav>
     <main id="main-content">
     ${buildSectionA()}
@@ -44,6 +52,8 @@ function buildHTML(): string {
     ${buildSectionC()}
     <hr class="section-divider" />
     ${buildSectionD()}
+    <hr class="section-divider" />
+    ${buildRobustSection(DB_SIZE)}
     </main>
     ${buildFooter()}
   `;
@@ -423,7 +433,7 @@ function buildSectionC(): string {
 
       <div class="subsection">
         <h3>C2 — Number of Servers vs. Communication</h3>
-        <div class="pir-table-wrap">
+        <div class="pir-table-wrap" role="region" tabindex="0" aria-label="PIR communication comparison">
           <table class="pir-table">
             <caption class="sr-only">Communication complexity by number of servers</caption>
             <thead>
@@ -722,6 +732,7 @@ function initCatalogCards(): void {
   }
 
   function selectCard(index: number): void {
+    const targetChanged = selectedIndex !== index;
     selectedIndex = index;
 
     // Section A's two diagrams used to say "wants book #9" and "Query S△{9}"
@@ -757,6 +768,10 @@ function initCatalogCards(): void {
 
     // Clear previous walkthrough
     clearWalkthrough();
+    setRobustTarget(index);
+    if (targetChanged) {
+      retireRobustResult('The selected book changed.');
+    }
   }
 
   grid.addEventListener('click', (e) => {
