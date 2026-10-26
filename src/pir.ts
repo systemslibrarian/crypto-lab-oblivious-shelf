@@ -10,11 +10,12 @@
  *   5. Server B returns: XOR of db[j] for j ∈ S △ {i}
  *   6. Patron computes: responseA XOR responseB = db[i]
  *
- * Privacy argument:
+ * Privacy argument within the protocol model (uniform independent randomness,
+ * identical databases, no collusion, and a server view limited to its query):
  *   - Server A sees S — uniformly random, independent of i.
  *   - Server B sees S △ {i} — also uniformly random (toggling i in a
  *     random set yields a random set), independent of i.
- *   - Neither server alone has any information about i.
+ *   - Neither protocol query alone has any information about i.
  */
 
 export interface PIRResult {
@@ -29,19 +30,81 @@ export interface PIRResult {
 }
 
 /**
+ * Keep public helpers from turning malformed input into unbounded allocations.
+ * This is deliberately generous for a browser teaching demo; the live catalog
+ * contains only 16 bits.
+ */
+export const MAX_DATABASE_BITS = 1_000_000;
+
+const MAX_RANDOM_BYTES_PER_CALL = 65_536;
+
+function assertSize(n: number, name: string, allowZero = true): void {
+  const minimum = allowZero ? 0 : 1;
+  if (!Number.isSafeInteger(n) || n < minimum || n > MAX_DATABASE_BITS) {
+    throw new RangeError(
+      `${name} must be a safe integer in [${minimum}, ${MAX_DATABASE_BITS}]`
+    );
+  }
+}
+
+function assertDatabase(db: boolean[], allowEmpty = true): void {
+  if (!Array.isArray(db)) {
+    throw new TypeError('db must be an array of booleans');
+  }
+  assertSize(db.length, 'db.length', allowEmpty);
+  if (!db.every((bit) => typeof bit === 'boolean')) {
+    throw new TypeError('db must contain only booleans');
+  }
+}
+
+function assertIndex(index: number, name: string, upperExclusive = MAX_DATABASE_BITS): void {
+  if (!Number.isSafeInteger(index) || index < 0 || index >= upperExclusive) {
+    throw new RangeError(`${name} must be a safe integer in [0, ${upperExclusive})`);
+  }
+}
+
+function assertSubset(
+  subset: Set<number>,
+  name: string,
+  upperExclusive = MAX_DATABASE_BITS
+): void {
+  if (!(subset instanceof Set)) {
+    throw new TypeError(`${name} must be a Set of indices`);
+  }
+  if (subset.size > MAX_DATABASE_BITS) {
+    throw new RangeError(`${name} contains too many indices`);
+  }
+  for (const index of subset) {
+    assertIndex(index, `${name} index`, upperExclusive);
+  }
+}
+
+function randomBytes(length: number): Uint8Array {
+  const bytes = new Uint8Array(length);
+  // Web Crypto limits a getRandomValues call to 65,536 bytes. Chunking keeps
+  // every accepted public size inside that platform limit.
+  for (let offset = 0; offset < bytes.length; offset += MAX_RANDOM_BYTES_PER_CALL) {
+    crypto.getRandomValues(
+      bytes.subarray(offset, Math.min(offset + MAX_RANDOM_BYTES_PER_CALL, bytes.length))
+    );
+  }
+  return bytes;
+}
+
+/**
  * Generate a uniformly random subset of {0, ..., n-1}
  * using crypto.getRandomValues for an unbiased CSPRNG draw.
  */
 export function randomSubset(n: number): Set<number> {
+  assertSize(n, 'n');
   const subset = new Set<number>();
-  if (n <= 0) return subset;
+  if (n === 0) return subset;
   // Draw ceil(n/8) random bytes and consume them one bit at a time: each
   // element gets its own independent fair coin from a single CSPRNG draw.
   // Bit (j & 7) of byte (j >> 3) decides membership of element j. (Spending a
   // whole byte and reading only bit 0 per element — as an earlier version did —
   // is equally unbiased but wastes 7 of every 8 random bits.)
-  const bytes = new Uint8Array(Math.ceil(n / 8));
-  crypto.getRandomValues(bytes);
+  const bytes = randomBytes(Math.ceil(n / 8));
   for (let j = 0; j < n; j++) {
     if ((bytes[j >> 3] >> (j & 7)) & 1) {
       subset.add(j);
@@ -59,6 +122,8 @@ export function symmetricDifferenceWithElement(
   S: Set<number>,
   i: number
 ): Set<number> {
+  assertSubset(S, 'S');
+  assertIndex(i, 'i');
   const result = new Set(S);
   if (result.has(i)) {
     result.delete(i);
@@ -73,6 +138,12 @@ export function symmetricDifferenceWithElement(
  * Returns false (0) for an empty subset.
  */
 export function xorResponse(db: boolean[], subset: Set<number>): boolean {
+  assertDatabase(db);
+  assertSubset(subset, 'subset', db.length);
+  return xorResponseUnchecked(db, subset);
+}
+
+function xorResponseUnchecked(db: boolean[], subset: Set<number>): boolean {
   let result = false;
   for (const j of subset) {
     result = result !== db[j]; // boolean XOR
@@ -87,10 +158,10 @@ export function xorResponse(db: boolean[], subset: Set<number>): boolean {
  * @param targetIndex - the index the patron wants to retrieve (0 ≤ i < n)
  */
 export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
-  const n = db.length;
-  if (targetIndex < 0 || targetIndex >= n) {
-    throw new RangeError(`targetIndex ${targetIndex} out of range [0, ${n})`);
-  }
+  assertDatabase(db, false);
+  const snapshot = db.slice();
+  const n = snapshot.length;
+  assertIndex(targetIndex, 'targetIndex', n);
 
   // Step 2: random subset S
   const subsetS = randomSubset(n);
@@ -99,8 +170,8 @@ export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
   const subsetS2 = symmetricDifferenceWithElement(subsetS, targetIndex);
 
   // Steps 4–5: server responses
-  const responseA = xorResponse(db, subsetS);
-  const responseB = xorResponse(db, subsetS2);
+  const responseA = xorResponseUnchecked(snapshot, subsetS);
+  const responseB = xorResponseUnchecked(snapshot, subsetS2);
 
   // Step 6: client recovers db[i]
   const recovered = responseA !== responseB; // XOR of two booleans
@@ -109,10 +180,19 @@ export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
   // that, read db[i] directly and compare. `correct` is the only thing the UI
   // is allowed to print a "verified" verdict from — if the protocol were
   // implemented wrongly this would go false and the page would say so.
-  const directBit = db[targetIndex];
+  const directBit = snapshot[targetIndex];
   const correct = recovered === directBit;
 
-  return { subsetS, subsetS2, responseA, responseB, recovered, directBit, correct, db };
+  return {
+    subsetS,
+    subsetS2,
+    responseA,
+    responseB,
+    recovered,
+    directBit,
+    correct,
+    db: snapshot,
+  };
 }
 
 /**
@@ -120,11 +200,10 @@ export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
  * server observed.
  *
  * The page used to assert "Server A cannot distinguish which element of S (if
- * any) is the target" as a fixed sentence. This derives it instead. For each
- * candidate j we reconstruct the subset S the patron must have drawn for that
- * candidate to produce the observed view, then re-run this server's side of the
- * protocol and check it reproduces the view exactly. A candidate survives only
- * if that round-trip closes.
+ * any) is the target" as a fixed sentence. This derives it instead. Once the
+ * observed view is validated as a legal subset, every candidate j survives:
+ * for Server A the implied draw is the view itself; for Server B it is
+ * view △ {j}. Both are legal draws with non-zero probability.
  *
  * The model this encodes is the one `randomSubset` implements: S is drawn
  * uniformly over all subsets of {0..n-1}, independently of the target. If that
@@ -133,44 +212,35 @@ export function pirQuery(db: boolean[], targetIndex: number): PIRResult {
  * and `pir.test.ts` pins the independence empirically so the drift is caught.
  */
 export function consistentTargets(view: Set<number>, n: number, role: 'A' | 'B'): number[] {
-  const survivors: number[] = [];
-  for (let j = 0; j < n; j++) {
-    // The S the patron must have drawn for candidate j to yield this view.
-    const impliedS = role === 'A' ? new Set(view) : symmetricDifferenceWithElement(view, j);
-    // A legal draw is any subset of {0..n-1}.
-    if (![...impliedS].every((x) => Number.isInteger(x) && x >= 0 && x < n)) continue;
-    // Re-run this server's side and require the observed view back.
-    const produced = role === 'A' ? impliedS : symmetricDifferenceWithElement(impliedS, j);
-    if (produced.size !== view.size) continue;
-    let matches = true;
-    for (const x of produced) {
-      if (!view.has(x)) { matches = false; break; }
-    }
-    if (matches) survivors.push(j);
+  assertSize(n, 'n', false);
+  assertSubset(view, 'view', n);
+  if (role !== 'A' && role !== 'B') {
+    throw new TypeError("role must be 'A' or 'B'");
   }
-  return survivors;
+  return Array.from({ length: n }, (_, j) => j);
 }
 
 /**
  * Generate a random boolean database of length n using CSPRNG.
  */
 export function generateDatabase(n: number): boolean[] {
-  const bytes = new Uint8Array(n);
-  crypto.getRandomValues(bytes);
+  assertSize(n, 'n');
+  const bytes = randomBytes(n);
   return Array.from(bytes, (b) => !!(b & 1));
 }
 
 /** Format a Set<number> as "{0, 3, 5, 9, 11, 14}" */
 export function formatSet(s: Set<number>): string {
+  assertSubset(s, 's');
   const sorted = [...s].sort((a, b) => a - b);
   return '{' + sorted.join(', ') + '}';
 }
 
 /** Build the XOR chain string for a given subset and db */
 export function buildXorChain(db: boolean[], subset: Set<number>): string {
+  const result = xorResponse(db, subset);
   const sorted = [...subset].sort((a, b) => a - b);
   if (sorted.length === 0) return '(empty set) = 0';
   const terms = sorted.map((j) => `db[${j}](${db[j] ? '1' : '0'})`);
-  const result = xorResponse(db, subset);
   return terms.join(' ⊕ ') + ' = ' + (result ? '1' : '0');
 }

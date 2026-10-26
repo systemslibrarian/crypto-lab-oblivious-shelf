@@ -67,7 +67,7 @@ function buildHeader(): string {
         </div>
         <aside class="cl-hero-why" aria-label="Why it matters">
           <span class="cl-hero-why-label">WHY IT MATTERS</span>
-          <p class="cl-hero-why-text">What you read, search, or look up is sensitive metadata. IT-PIR lets a database answer your query while learning nothing about it — privacy guaranteed by information theory, not by trusting the operator.</p>
+          <p class="cl-hero-why-text">What you read, search, or look up is sensitive metadata. Within its protocol assumptions, IT-PIR hides the requested index from either server without relying on a computational hardness assumption.</p>
         </aside>
       </header>
     </div>
@@ -86,9 +86,10 @@ function buildSectionA(): string {
       <div class="subsection" id="section-a1">
         <h3>A1 — The Library Privacy Problem</h3>
         <p>
-          Suppose a patron wants to retrieve a record from a library catalog of 16 books.
+          Suppose a patron wants to retrieve one bit — the checked-out flag — for a book
+          in a library catalog of 16 books.
           The simplest approach is to ask the server directly — but the server then learns
-          exactly which book was requested, creating a permanent log entry.
+          exactly which book was requested and can record that lookup.
         </p>
 
         <div class="pir-visual">
@@ -122,10 +123,12 @@ function buildSectionA(): string {
         </div>
 
         <p>
-          IT-PIR solves this by splitting the query across two <em>non-colluding</em>
+          This IT-PIR construction splits the query across two <em>non-colluding</em>
           servers, each holding identical copies of the database. The patron's query
-          is constructed so that neither server alone can determine which book was
-          requested — even with unlimited computational power.
+          is constructed so that either server's protocol query is statistically
+          independent of the requested index. That statement assumes uniform independent
+          randomness and a server view limited to the protocol; it does not cover IP
+          addresses, timing, patron identity, auxiliary logs, or server collusion.
         </p>
 
         <div class="pir-visual">
@@ -193,10 +196,10 @@ function buildSectionA(): string {
         </p>
 
         <div class="explainer-box privacy">
-          <strong>Two-server IT-PIR guarantee:</strong> Each server's view is a uniformly
+          <strong>Two-server IT-PIR protocol guarantee:</strong> Each query is a uniformly
           random subset of <code>{0, …, n−1}</code>. The view is statistically independent
-          of the target index <em>i</em>. No server, operating alone, can distinguish
-          whether the patron wanted book #2, #9, or any other entry.
+          of the target index <em>i</em>. Given one valid protocol query alone, a server
+          cannot distinguish whether the target was book #2, #9, or any other entry.
         </div>
       </div>
 
@@ -268,7 +271,8 @@ function buildSectionA(): string {
           of <code>{0,…,15}</code> — its distribution is independent of <em>i</em>.
           Server B sees only <code>S △ {i}</code>: toggling a fixed element in a uniformly
           random set again yields a uniformly random set, independent of which element was
-          toggled. <em>Each server's view has zero mutual information with the target index.</em>
+          toggled. <em>Under the stated assumptions, each protocol query has zero mutual
+          information with the target index.</em>
         </div>
       </div>
     </section>
@@ -307,8 +311,8 @@ function buildSectionB(): string {
       <p>
         Select any book from the catalog, then click <strong>Generate Query</strong> to
         run the full 2-server XOR PIR protocol with real arithmetic. Each query uses a
-        freshly sampled random subset S — click <strong>Run Again</strong> to see a
-        different subset retrieve the same book.
+        freshly sampled random subset S — click <strong>Run Again</strong> to draw another
+        independent subset and retrieve the same bit. Random draws can occasionally repeat.
       </p>
 
       <div class="demo-layout">
@@ -401,15 +405,19 @@ function buildSectionC(): string {
           Woodruff and Yekhanin (2005) gave a geometric construction matching
           <code>O(n<sup>1/3</sup>)</code> for 2 servers with far less online server work.
           Efremenko (2009), building on Yekhanin (2007), pushed 3-server communication to
-          sub-polynomial using matching-vector codes.
+          sub-polynomial using matching-vector codes. Dvir and Gopi later gave the first
+          2-server scheme with sub-polynomial communication,
+          <a href="https://arxiv.org/abs/1407.6692"><code>n<sup>O(√(log log n / log n))</sup></code></a>,
+          improving the earlier 2-server <code>O(n<sup>1/3</sup>)</code> upper bound.
         </p>
         <p>
-          Lower bounds are the open end of the problem. Chor et al. note that the only
-          general lower bound is the obvious <code>Ω(log n)</code> — enough bits to name an
-          index — and it follows from communication complexity alone, without any privacy
-          argument. No super-logarithmic lower bound is known for a constant number of
-          servers, so the gap between <code>O(n<sup>1/3</sup>)</code> and
-          <code>Ω(log n)</code> is still open.
+          Lower bounds remain the open end of the problem. For general 2-server PIR, the
+          best known lower bound is still logarithmic: Wehner and de Wolf prove
+          <code>C ≥ (5 − o(1)) log₂ n</code>; stronger bounds apply only to restricted
+          models. The gap is therefore between that general lower bound and Dvir–Gopi's
+          sub-polynomial upper bound, not the older <code>O(n<sup>1/3</sup>)</code> bound. See
+          <a href="https://arxiv.org/abs/quant-ph/0403140">Wehner and de Wolf's Theorem 10</a>
+          for the precise asymptotic statement.
         </p>
       </div>
 
@@ -447,6 +455,11 @@ function buildSectionC(): string {
                 <td><code>O(n<sup>1/3</sup>)</code>, less server work</td>
               </tr>
               <tr>
+                <td>2</td>
+                <td>Dvir-Gopi — matching vectors and derivatives</td>
+                <td><code>n<sup>O(√(log log n / log n))</sup></code></td>
+              </tr>
+              <tr>
                 <td>k</td>
                 <td>Ambainis 1997</td>
                 <td><code>O(n<sup>1/(2k−1)</sup>)</code></td>
@@ -472,11 +485,12 @@ function buildSectionC(): string {
           hardness assumption.
         </p>
         <p>
-          In library contexts, IT-PIR is often preferred precisely because it requires <em>no
-          such assumptions</em>. The server provably learns nothing regardless of its
-          computational power. A library server compelled by a court order cannot disclose
-          which book was requested, even if it retains all logs and has unlimited compute —
-          the information simply was never present in the query.
+          IT-PIR requires <em>no computational hardness assumption</em>. Under the protocol's
+          non-collusion, identical-database, and uniform-randomness assumptions, a server
+          cannot infer the target from its query and response regardless of its computational
+          power. That guarantee does not sanitize operational logs: patron identity, network
+          addresses, timing, and other application events can still reveal sensitive facts,
+          and combining both servers' queries reveals the target.
         </p>
         <p>
           CPIR is attractive when only a single server is available, but the security model
@@ -485,22 +499,22 @@ function buildSectionC(): string {
       </div>
 
       <div class="subsection">
-        <h3>C4 — Real-World Deployment</h3>
+        <h3>C4 — Research Systems and Prototypes</h3>
         <ul style="margin:0 0 0 1.5rem;line-height:2.2">
           <li>
-            <strong>RAID-PIR (2014):</strong> A practical IT-PIR system that distributes a
-            large database across multiple servers using RAID-style XOR parity, achieving
-            efficient bandwidth usage for millions of entries.
+            <strong><a href="https://encrypto.de/papers/DHS14.pdf">RAID-PIR (2014)</a>:</strong>
+            A multi-server design combining pseudorandomly expanded queries with RAID-inspired
+            striping, mirroring, and parity techniques to reduce storage and communication costs.
           </li>
           <li>
-            <strong>Percy++:</strong> An open-source IT-PIR and CPIR library from Ian Goldberg
-            at the University of Waterloo, used extensively in academic and privacy
-            research deployments.
+            <strong><a href="https://crysp.uwaterloo.ca/software/">Percy++</a>:</strong>
+            An open-source C++ library from the University of Waterloo implementing
+            information-theoretic and computational PIR protocols for research.
           </li>
           <li>
-            <strong>Microsoft SEAL:</strong> A homomorphic encryption library from Microsoft
-            Research supporting BFV and CKKS schemes, used for single-server CPIR-adjacent
-            keyword search without IT-PIR's communication overhead.
+            <strong><a href="https://www.usenix.org/conference/usenixsecurity21/presentation/kogan">Checklist</a>:</strong>
+            A two-server, offline/online PIR system for private blocklist lookups, evaluated
+            with Safe Browsing data.
           </li>
         </ul>
       </div>
@@ -520,35 +534,41 @@ function buildSectionD(): string {
       <div class="subsection">
         <h3>D1 — The Legal Landscape</h3>
         <p>
-          The USA PATRIOT Act (2001) created two distinct pressures on libraries, and they
-          are routinely confused. <strong>Section 215</strong> rewrote the FISA business-records
-          provision so the FBI could <em>apply to a judge of the Foreign Intelligence
-          Surveillance Court</em> for an ex parte order compelling production of "any tangible
-          things (including books, records, papers, documents, and other items)" — circulation
-          records and patron databases among them — with a statutory bar on disclosing that the
-          order had been received. <strong>Section 505</strong> separately expanded the
-          <em>National Security Letter</em> authorities, which the FBI issues on its own
-          signature with no prior judicial approval at all. The case librarians actually
-          litigated — Library Connection in Connecticut, 2005 — was an NSL, not a Section 215
-          order. A demo that says "PATRIOT Act NSL" as though it were one thing gets the
-          threat model wrong: one mechanism has a judge in the loop and the other does not.
+          The USA PATRIOT Act (2001) amended two distinct authorities that are often
+          conflated. Its <strong>Section 215</strong> amendments broadened the FISA
+          business-records process in
+          <a href="https://www.govinfo.gov/link/uscode/50/1861">50 U.S.C. § 1861</a>,
+          under which the government applied to the Foreign Intelligence Surveillance Court.
+          Those amendments expired on March 15, 2020 and were not reauthorized; the statute
+          includes a grandfather rule for qualifying investigations concerning conduct before
+          expiration. Describing the 2001 version as though it were current law is therefore
+          inaccurate.
         </p>
         <p>
-          The American Library Association responded with formal policy guidance reaffirming
-          patron privacy as a core professional value, challenged the constitutionality of
-          gag orders in court, and encouraged libraries to minimize data retention. Several
-          states — including Connecticut, Illinois, and California — have enacted library
-          privacy statutes that impose stricter limits on government access than federal law.
-          The tension between patron privacy and government access remains legally and
-          politically unresolved.
+          <strong>Section 505</strong> separately expanded National Security Letter (NSL)
+          authorities. One of those authorities,
+          <a href="https://www.govinfo.gov/link/uscode/18/2709">18 U.S.C. § 2709</a>,
+          remains codified and permits the FBI, under its statutory conditions, to demand
+          specified subscriber and transactional information without first obtaining a court
+          order. The 2005 Library Connection dispute was an NSL seeking subscriber information
+          associated with an IP address during a 45-minute window — not a Section 215 order and
+          not a demand for circulation records — as the librarians later
+          <a href="https://www.govinfo.gov/content/pkg/CHRG-110shrg36642/pdf/CHRG-110shrg36642.pdf">testified to Congress</a>.
         </p>
         <p>
-          Cryptographic PIR offers a technical complement to these legal protections. If a
-          library deploys IT-PIR for catalog access, its servers retain only random-looking
-          query subsets: sets of indices with no connection to any patron's identity or intent.
-          Even if a court order compels full disclosure of server logs, <em>no information
-          about which patron requested which item exists to disclose</em>. The database knows
-          it was queried; it does not know what for.
+          Library-record confidentiality also varies by jurisdiction. The American Library
+          Association maintains
+          <a href="https://www.ala.org/advocacy/privacy/lawenforcement/inquiries">guidance for law-enforcement inquiries</a>
+          and recommends legal review rather than treating a general summary as advice. This
+          demo is not legal advice; a library responding to a current request should consult
+          qualified counsel and current law.
+        </p>
+        <p>
+          Cryptographic PIR can complement those protections, but only within its technical
+          boundary. If either non-colluding server retains only its valid protocol query and
+          response, that material alone does not identify the requested index. PIR does not
+          erase patron identity, IP address, timing, application, or circulation logs, and
+          disclosure or collusion that brings both query shares together reveals the target.
         </p>
       </div>
 
@@ -578,7 +598,7 @@ function buildSectionD(): string {
               <tr>
                 <td><strong>IT-PIR</strong></td>
                 <td>Information-theoretic</td>
-                <td>Requires 2 genuinely non-colluding servers; O(n) communication</td>
+                <td>Requires genuinely non-colluding servers; this basic demo uses O(n) communication</td>
               </tr>
             </tbody>
           </table>
@@ -914,7 +934,7 @@ function runQuery(targetIndex: number): void {
     const label = result.recovered ? 'checked out' : 'available';
     announce(
       `Recovered db[${targetIndex}] = ${result.recovered ? 1 : 0}: ${entry.title} is ${label}. ` +
-        `Each server saw only a random-looking set; neither learned the target.`
+        `Within the modeled protocol, each server saw only a random-looking set and neither query identified the target.`
     );
   }
 
@@ -1019,9 +1039,9 @@ function renderPrivacyProof(result: ReturnType<typeof pirQuery>, idx: number): s
   const sStr = formatSet(result.subsetS);
   const s2Str = formatSet(result.subsetS2);
   const n = result.db.length;
-  // Enumerated, not asserted: for each of the n candidate targets, reconstruct
-  // the S the patron would have had to draw and check it reproduces this
-  // server's exact view. Survivors are the indices that server cannot rule out.
+  // Derived, not asserted: a valid A view is itself a possible draw for every
+  // target; a valid B view toggled at any candidate is also a possible draw.
+  // Survivors are the indices that server cannot rule out.
   const candA = consistentTargets(result.subsetS, n, 'A');
   const candB = consistentTargets(result.subsetS2, n, 'B');
   const verdict =
@@ -1031,7 +1051,7 @@ function renderPrivacyProof(result: ReturnType<typeof pirQuery>, idx: number): s
         `That should not happen with this scheme; if you are reading this, the query construction is leaking.`;
   return (
     `<strong>Server A</strong> saw S = <span class="set">${sStr}</span>. ` +
-    `Candidate targets consistent with that view, checked one by one: ` +
+    `Candidate targets consistent with that valid protocol view: ` +
     `<strong>${candA.length} of ${n}</strong>.<br>` +
     `<strong>Server B</strong> saw S△{i} = <span class="set">${s2Str}</span>. ` +
     `Candidate targets consistent with that view: <strong>${candB.length} of ${n}</strong>.<br>` +

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run && node --test tests/workflow-controls.test.mjs",
     "test:a11y": "playwright test"
   },
   "devDependencies": {

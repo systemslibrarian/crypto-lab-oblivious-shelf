@@ -138,6 +138,33 @@ test('before any selection the demo is inert and says so', async ({ page }) => {
   await expect(page.locator('#server-views')).toBeHidden();
 });
 
+test('scope, research timeline, and legal caveats stay accurate', async ({ page }) => {
+  await page.goto('.');
+
+  const intro = page.locator('#section-a');
+  await expect(intro).toContainText('one bit');
+  await expect(intro).toContainText('view limited to the protocol');
+
+  const demo = page.locator('#section-b');
+  await expect(demo).toContainText('Random draws can occasionally repeat');
+
+  const tradeoffs = page.locator('#section-c');
+  await expect(tradeoffs).toContainText('Dvir and Gopi');
+  await expect(tradeoffs).toContainText("Dvir–Gopi's sub-polynomial upper bound");
+  await expect(tradeoffs).toContainText('C ≥ (5 − o(1)) log₂ n');
+  await expect(tradeoffs.getByRole('link', { name: "Wehner and de Wolf's Theorem 10" }))
+    .toHaveAttribute('href', 'https://arxiv.org/abs/quant-ph/0403140');
+  await expect(tradeoffs).not.toContainText('ITC 2025 literature summary');
+  await expect(tradeoffs).not.toContainText('Microsoft SEAL');
+  await expect(tradeoffs).not.toContainText('millions of entries');
+
+  const legal = page.locator('#section-d');
+  await expect(legal).toContainText('expired on March 15, 2020');
+  await expect(legal).toContainText('45-minute window');
+  await expect(legal).toContainText('not legal advice');
+  await expect(legal).toContainText('both query shares together reveals the target');
+});
+
 test('selecting a book arms the demo and retargets the explanation diagrams', async ({ page }) => {
   await page.goto('.');
   const n = await catalogSize(page);

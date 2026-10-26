@@ -139,6 +139,13 @@ a:hover {
   border-bottom-color: var(--accent-hover);
 }
 
+/* Inline source links must remain identifiable without relying on color. */
+.demo-section a {
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+}
+
 code, pre {
   font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
   font-size: 0.85em;
