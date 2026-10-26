@@ -35,6 +35,8 @@ test('quality gate uses a clean install, audit, and supported Node matrix', () =
 test('pull requests run browser gates but cannot publish a Pages artifact', () => {
   const browser = job('browser');
   assert.match(browser, /needs: quality/);
+  assert.match(browser, /https:\/\/archive\.ubuntu\.com\/ubuntu/);
+  assert.match(browser, /npx playwright install --with-deps chromium/);
   assert.match(browser, /run: npm run test:a11y/);
   assert.match(
     browser,
