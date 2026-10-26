@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const workflow = readFileSync(new URL('../.github/workflows/pages.yml', import.meta.url), 'utf8');
+const mutationGate = readFileSync(new URL('../scripts/mutations.mjs', import.meta.url), 'utf8');
 
 function job(name, source = workflow) {
   const start = source.indexOf(`  ${name}:\n`);
@@ -43,6 +44,15 @@ test('pull requests run browser gates but cannot publish a Pages artifact', () =
     browser,
     /name: Package the tested site for Pages\n        if: github\.event_name != 'pull_request'/
   );
+});
+
+test('mutation controls escape regex metacharacters and prove one test ran', () => {
+  assert.match(mutationGate, /function escapeRegExp\(value\)/);
+  assert.match(mutationGate, /const testPattern = escapeRegExp\(mutation\.test\)/);
+  assert.match(mutationGate, /'--testNamePattern', testPattern/);
+  assert.match(mutationGate, /'--grep', testPattern/);
+  assert.match(mutationGate, /!ranExactlyOnePassingTest\(result\.output, mutation\.runner\)/);
+  assert.match(mutationGate, /FORCE_COLOR: '0', NO_COLOR: '1'/);
 });
 
 test('deployment authority exists only in the deploy job', () => {

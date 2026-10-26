@@ -128,7 +128,7 @@ function run(command, args, timeout = 300_000) {
   const result = spawnSync(command, args, {
     cwd: process.cwd(),
     encoding: 'utf8',
-    env: { ...process.env, CI: '1' },
+    env: { ...process.env, CI: '1', FORCE_COLOR: '0', NO_COLOR: '1' },
     maxBuffer: 32 * 1024 * 1024,
     timeout,
   });
@@ -139,13 +139,27 @@ function run(command, args, timeout = 300_000) {
   };
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function ranExactlyOnePassingTest(output, runner) {
+  return runner === 'browser'
+    ? /(?:^|\n)\s*1 passed \(/.test(output)
+    : /(?:^|\n)\s*Tests\s+1 passed\b/.test(output);
+}
+
 function namedTest(mutation, shouldPass) {
+  const testPattern = escapeRegExp(mutation.test);
   const args = mutation.runner === 'browser'
-    ? ['playwright', 'test', mutation.spec, '--grep', mutation.test, '--retries=0', '--workers=1', '--reporter=list']
-    : ['vitest', 'run', UNIT, '--testNamePattern', mutation.test, '--reporter=verbose'];
+    ? ['playwright', 'test', mutation.spec, '--grep', testPattern, '--retries=0', '--workers=1', '--reporter=list']
+    : ['vitest', 'run', UNIT, '--testNamePattern', testPattern, '--reporter=verbose'];
   const result = run('npx', args, mutation.runner === 'browser' ? 300_000 : 120_000);
   if (shouldPass && result.code !== 0) {
     throw new Error(`${mutation.name}: passing control failed\n${result.output}`);
+  }
+  if (shouldPass && !ranExactlyOnePassingTest(result.output, mutation.runner)) {
+    throw new Error(`${mutation.name}: passing control did not execute exactly one test\n${result.output}`);
   }
   if (!shouldPass && result.code === 0) {
     throw new Error(`${mutation.name}: mutation survived its named test`);
