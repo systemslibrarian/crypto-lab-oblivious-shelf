@@ -8,6 +8,7 @@ export const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 /** A phone-width viewport, for the WCAG 1.4.10 reflow half of the gate. */
 export const NARROW = { width: 380, height: 800 };
+export const NARROW_320 = { width: 320, height: 800 };
 
 /**
  * Shared machinery for the WCAG gate.
@@ -330,4 +331,26 @@ export async function driveAllStates(page: Page, theme: string): Promise<void> {
   await page.locator('#btn-again').click();
   await expect(steps.last()).toHaveClass(/visible/, { timeout: 30_000 });
   await scan(page, `${theme} / run again`);
+
+  // Exercise the added robust-PIR computation rather than scanning only its
+  // empty shell. The first state is inside the correction bound.
+  await page.locator('#robust-preset').selectOption('one-byzantine-one-erasure');
+  await page.locator('#btn-robust-run').click();
+  await expect(page.locator('#robust-result')).toBeVisible();
+  await expect(page.locator('[data-server-result]')).toHaveCount(5);
+  await scan(page, `${theme} / robust corrected answer`);
+
+  // Query collusion is a separate result from answer correction.
+  await page.locator('#robust-colluder-b').selectOption('2');
+  await page.locator('#btn-robust-run').click();
+  await expect(page.locator('[data-colluded-target]')).toBeVisible();
+  await scan(page, `${theme} / robust two-view collusion`);
+
+  // The threshold warning and empirically wrong accepted bit must themselves
+  // remain perceivable; beyond-bound behavior is not hidden in a unit test.
+  await page.locator('#robust-preset').selectOption('beyond-bound');
+  await page.locator('#btn-robust-run').click();
+  await expect(page.locator('#robust-guarantee')).toContainText('GUARANTEE EXCEEDED');
+  await expect(page.locator('[data-independent-match="false"]')).toBeVisible();
+  await scan(page, `${theme} / robust exceeded bound`);
 }

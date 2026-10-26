@@ -38,6 +38,7 @@ test('pull requests run browser gates but cannot publish a Pages artifact', () =
   assert.match(browser, /https:\/\/archive\.ubuntu\.com\/ubuntu/);
   assert.match(browser, /npx playwright install --with-deps chromium/);
   assert.match(browser, /run: npm run test:a11y/);
+  assert.match(browser, /name: Robust PIR clean-baseline mutation gate\n        run: npm run test:mutations/);
   assert.match(
     browser,
     /name: Package the tested site for Pages\n        if: github\.event_name != 'pull_request'/

@@ -56,6 +56,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Browser, claims, and accessibility gates
         run: npm run test:a11y
+      - name: Robust PIR clean-baseline mutation gate
+        run: npm run test:mutations
       - name: Package the tested site for Pages
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5

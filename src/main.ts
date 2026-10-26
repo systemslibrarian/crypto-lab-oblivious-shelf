@@ -7,6 +7,12 @@ import {
   xorResponse,
   consistentTargets,
 } from './pir.ts';
+import {
+  buildRobustSection,
+  initRobustSection,
+  retireRobustResult,
+  setRobustTarget,
+} from './robust-ui.ts';
 
 // ---------- Database: generated once per session ----------
 const DB: boolean[] = generateDatabase(DB_SIZE);
@@ -23,6 +29,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = buildHTML();
 initThemeToggle();
 initCatalogCards();
 initQueryPanel();
+initRobustSection(DB, () => selectedIndex);
 
 // ================================================================
 // HTML BUILDER
@@ -35,6 +42,7 @@ function buildHTML(): string {
       <a href="#section-b">B: Live Demo</a>
       <a href="#section-c">C: Communication Cost</a>
       <a href="#section-d">D: Librarian's Dilemma</a>
+      <a href="#section-e">E: Robust Shelf</a>
     </nav>
     <main id="main-content">
     ${buildSectionA()}
@@ -44,6 +52,8 @@ function buildHTML(): string {
     ${buildSectionC()}
     <hr class="section-divider" />
     ${buildSectionD()}
+    <hr class="section-divider" />
+    ${buildRobustSection(DB_SIZE)}
     </main>
     ${buildFooter()}
   `;
@@ -722,6 +732,7 @@ function initCatalogCards(): void {
   }
 
   function selectCard(index: number): void {
+    const targetChanged = selectedIndex !== index;
     selectedIndex = index;
 
     // Section A's two diagrams used to say "wants book #9" and "Query S△{9}"
@@ -757,6 +768,10 @@ function initCatalogCards(): void {
 
     // Clear previous walkthrough
     clearWalkthrough();
+    setRobustTarget(index);
+    if (targetChanged) {
+      retireRobustResult('The selected book changed.');
+    }
   }
 
   grid.addEventListener('click', (e) => {
