@@ -412,12 +412,12 @@ function buildSectionC(): string {
         </p>
         <p>
           Lower bounds remain the open end of the problem. For general 2-server PIR, the
-          best known lower bound is still logarithmic (specifically <code>5 log n</code>);
-          stronger bounds apply only to restricted models. The gap is therefore between a
-          logarithmic general lower bound and Dvir–Gopi's sub-polynomial upper bound, not
-          the older <code>O(n<sup>1/3</sup>)</code> bound. See the
-          <a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITC.2025.5">ITC 2025 literature summary</a>
-          for the bound comparison.
+          best known lower bound is still logarithmic: Wehner and de Wolf prove
+          <code>C ≥ (5 − o(1)) log₂ n</code>; stronger bounds apply only to restricted
+          models. The gap is therefore between that general lower bound and Dvir–Gopi's
+          sub-polynomial upper bound, not the older <code>O(n<sup>1/3</sup>)</code> bound. See
+          <a href="https://arxiv.org/abs/quant-ph/0403140">Wehner and de Wolf's Theorem 10</a>
+          for the precise asymptotic statement.
         </p>
       </div>
 

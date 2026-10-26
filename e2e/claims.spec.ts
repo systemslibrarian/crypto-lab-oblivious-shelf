@@ -151,6 +151,10 @@ test('scope, research timeline, and legal caveats stay accurate', async ({ page 
   const tradeoffs = page.locator('#section-c');
   await expect(tradeoffs).toContainText('Dvir and Gopi');
   await expect(tradeoffs).toContainText("Dvir–Gopi's sub-polynomial upper bound");
+  await expect(tradeoffs).toContainText('C ≥ (5 − o(1)) log₂ n');
+  await expect(tradeoffs.getByRole('link', { name: "Wehner and de Wolf's Theorem 10" }))
+    .toHaveAttribute('href', 'https://arxiv.org/abs/quant-ph/0403140');
+  await expect(tradeoffs).not.toContainText('ITC 2025 literature summary');
   await expect(tradeoffs).not.toContainText('Microsoft SEAL');
   await expect(tradeoffs).not.toContainText('millions of entries');
 

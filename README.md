@@ -38,6 +38,7 @@ Select any book from the 16-entry catalog grid to set it as the target index, th
 ## Primary References
 
 - [Chor, Goldreich, Kushilevitz, and Sudan, *Private Information Retrieval*](https://madhu.seas.harvard.edu/papers/1995/pir-journ.pdf)
+- [Wehner and de Wolf, *Improved Lower Bounds for Locally Decodable Codes and Private Information Retrieval*](https://arxiv.org/abs/quant-ph/0403140)
 - [Dvir and Gopi, *2-Server PIR with Sub-polynomial Communication*](https://arxiv.org/abs/1407.6692)
 - [United States Code, 50 U.S.C. § 1861](https://www.govinfo.gov/link/uscode/50/1861)
 - [United States Code, 18 U.S.C. § 2709](https://www.govinfo.gov/link/uscode/18/2709)
