@@ -433,7 +433,7 @@ function buildSectionC(): string {
 
       <div class="subsection">
         <h3>C2 — Number of Servers vs. Communication</h3>
-        <div class="pir-table-wrap">
+        <div class="pir-table-wrap" role="region" tabindex="0" aria-label="PIR communication comparison">
           <table class="pir-table">
             <caption class="sr-only">Communication complexity by number of servers</caption>
             <thead>

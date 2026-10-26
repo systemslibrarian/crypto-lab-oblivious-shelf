@@ -109,7 +109,7 @@ export function buildRobustSection(databaseLength: number): string {
       </div>
 
       <div class="robust-workbench">
-        <div class="robust-controls" aria-labelledby="robust-controls-heading">
+        <section class="robust-controls" aria-labelledby="robust-controls-heading">
           <h3 id="robust-controls-heading">Run one round</h3>
           <p id="robust-target" class="selected-display">Select a book in Section B first.</p>
 
@@ -143,7 +143,7 @@ export function buildRobustSection(databaseLength: number): string {
 
           <button class="btn btn-primary" id="btn-robust-run" disabled>Run robust query</button>
           <p class="hint">Queries go to all five servers before availability is known. Answer faults and query collusion are evaluated separately.</p>
-        </div>
+        </section>
 
         <div class="robust-output-shell">
           <div id="robust-awaiting" class="robust-awaiting">
