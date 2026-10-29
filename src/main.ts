@@ -303,9 +303,15 @@ function buildSectionB(): string {
     return `
       <div class="catalog-card" id="card-${entry.id}" data-index="${entry.id}" role="option"
            tabindex="${entry.id === 0 ? '0' : '-1'}"
-           aria-selected="false"
-           aria-label="Book ${entry.id}: ${safeTitle} by ${safeAuthor}. ${badgeText}.">
-        <span class="card-index" aria-hidden="true">#${entry.id}</span>
+           aria-selected="false">
+        <!-- No aria-label, and the index is not aria-hidden. Both together are
+             what makes the name match: axe 4.14 compares the accessible name
+             against everything a SIGHTED user sees (label-content-name-mismatch,
+             WCAG 2.5.3 Label in Name) while excluding aria-hidden content from
+             the NAME. The card shows an index, title, author, call number and
+             availability, and the old label named four of the five. Letting the
+             content be the name keeps them identical by construction. -->
+        <span class="card-index">#${entry.id}</span>
         <div class="card-title">${safeTitle}</div>
         <div class="card-author">${safeAuthor}</div>
         <div class="card-callnum">${safeCall}</div>
