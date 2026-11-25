@@ -401,15 +401,15 @@ function buildSectionC(): string {
           <li><strong>Naive (download everything):</strong> <code>O(n)</code> bits — trivially private but impractical.</li>
           <li><strong>Basic XOR scheme (the one this demo runs):</strong> Two queries each of size
             <code>O(n)</code> bits (the subsets), plus two 1-bit responses. Total: <code>O(n)</code> bits.
-            Same asymptotic cost as naive, but with information-theoretic privacy.</li>
+            Downloading every bit also hides which one the patron wanted.</li>
         </ul>
         <div class="explainer-box warning">
           <strong>Where the cost goes:</strong> the <code>O(n)</code> here is the price of the
           <em>simplest</em> 2-server construction, not of 2-server IT-PIR in general. Each
-          query is an <em>n</em>-bit subset indicator, so you move as many bits as you would
-          by downloading the database — you just move them in a form the server cannot read
-          an index out of. This demo uses the basic scheme because the arithmetic fits on a
-          screen, not because it is the best known.
+          query is an <em>n</em>-bit subset indicator. Counting both queries and both replies
+          gives <strong>2n + 2 bits</strong> of protocol payload. With this catalog,
+          that is <strong>${2 * DB_SIZE + 2} bits</strong>, compared with downloading the ${DB_SIZE}-bit database.
+          Both costs grow linearly with the number of entries. These counts exclude network headers.
         </div>
         <p>
           The same paper does better. Chor, Goldreich, Kushilevitz and Sudan give a
@@ -774,6 +774,7 @@ function initCatalogCards(): void {
 
     // Clear previous walkthrough
     clearWalkthrough();
+    announce(`Selected book ${index}, ${entry.title}. Ready to query its availability.`);
     setRobustTarget(index);
     if (targetChanged) {
       retireRobustResult('The selected book changed.');

@@ -395,6 +395,13 @@ test('Run Again redraws S but recovers the same bit', async ({ page }) => {
   ).toBeGreaterThan(1);
 });
 
+test('communication counts both query masks and both replies', async ({ page }) => {
+  await page.goto('.');
+  const entries = await page.locator('#catalog-grid .catalog-card').count();
+  const cost = page.locator('#section-c');
+  await expect(cost).toContainText(`${2 * entries + 2} bits, compared with downloading the ${entries}-bit database`);
+});
+
 test('changing the selection clears the previous verdict instead of leaving it stale', async ({
   page,
 }) => {
@@ -409,6 +416,8 @@ test('changing the selection clears the previous verdict instead of leaving it s
   await expect(page.locator('#walkthrough .walk-step')).toHaveCount(0);
   await expect(page.locator('#server-views')).toBeHidden();
   await expect(page.locator('#selected-display')).toContainText('#13');
+  await expect(page.locator('#sr-status')).toContainText('Selected book 13');
+  await expect(page.locator('#sr-status')).not.toContainText('Recovered');
 
   await page.locator('#btn-generate').click();
   await settle(page);
